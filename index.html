@@ -1,0 +1,3323 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SUT — Sistema Uruguayo de Triage</title>
+  <script>(function(){var t=localStorage.getItem('sut_theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <style>
+    /* ─── TOKENS ─────────────────────────────────────────────── */
+    :root {
+      --rojo:       #D62828;
+      --naranja:    #E07A15;
+      --amarillo:   #E8C13A;
+      --verde:      #2E9E5B;
+      --azul:       #2A6DB5;
+      --rojo-soft:  #FAE5E5;
+      --naranja-soft:#FEF1E2;
+      --amarillo-soft:#FEFAE3;
+      --verde-soft: #E3F5EC;
+      --azul-soft:  #E3EEF9;
+
+      --bg:         #0D1117;
+      --bg2:        #161B22;
+      --bg3:        #1E252E;
+      --border:     #2D3748;
+      --text:       #E6EDF3;
+      --text-muted: #8B949E;
+      --accent:     #2A6DB5;
+      --accent-glow:#2A6DB580;
+
+      --font-display: 'Segoe UI', system-ui, sans-serif;
+      --font-mono:    'JetBrains Mono', 'Courier New', monospace;
+      --radius:       10px;
+      --shadow:       0 4px 24px rgba(0,0,0,0.4);
+    }
+
+    [data-theme="light"] {
+      --bg:         #F4F6F9;
+      --bg2:        #FFFFFF;
+      --bg3:        #EAEDF3;
+      --border:     #CED3DF;
+      --text:       #1A2235;
+      --text-muted: #6C7A99;
+      --shadow:     0 4px 24px rgba(0,0,0,0.09);
+      --accent-glow:#2A6DB530;
+    }
+    [data-theme="light"] #screen-welcome {
+      background: radial-gradient(ellipse at 50% 0%, #d4e4f5 0%, var(--bg) 70%);
+    }
+    [data-theme="light"] .pac-table td { border-bottom:1px solid var(--border); }
+    [data-theme="light"] .pac-table tr:hover td { background:rgba(0,0,0,0.025); }
+    [data-theme="light"] .idx-table td { border-bottom:1px solid var(--border); }
+    [data-theme="light"] .modified-tag { color:#7a5a00; background:rgba(232,193,58,0.18); border-color:rgba(232,193,58,0.45); }
+    [data-theme="light"] .override-select { background:var(--bg2); }
+    [data-theme="light"] .bib-ref { background:var(--bg3); }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-display);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ─── PANTALLA DE BIENVENIDA ─────────────────────────────── */
+    #screen-welcome {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem;
+      background: radial-gradient(ellipse at 50% 0%, #1a2a3a 0%, var(--bg) 70%);
+    }
+
+    .welcome-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 3rem 3.5rem;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: var(--shadow), 0 0 60px var(--accent-glow);
+      text-align: center;
+    }
+
+    .sut-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 0.4rem 1.2rem;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 1.8rem;
+    }
+
+    .sut-badge span.dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--verde);
+      box-shadow: 0 0 8px var(--verde);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+
+    .welcome-card h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      margin-bottom: 0.5rem;
+    }
+
+    .welcome-card h1 span.highlight {
+      color: var(--azul);
+    }
+
+    .welcome-subtitle {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+
+    /* franja de colores decorativa */
+    .color-strip {
+      display: flex;
+      height: 5px;
+      border-radius: 50px;
+      overflow: hidden;
+      margin-bottom: 2.2rem;
+    }
+    .color-strip div { flex: 1; }
+    .cs-r { background: var(--rojo); }
+    .cs-o { background: var(--naranja); }
+    .cs-y { background: var(--amarillo); }
+    .cs-g { background: var(--verde); }
+    .cs-b { background: var(--azul); }
+
+    /* frase motivadora */
+    .frase {
+      background: var(--bg3);
+      border-left: 3px solid var(--azul);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 1rem 1.2rem;
+      margin-bottom: 2rem;
+      font-style: italic;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      text-align: left;
+    }
+    .frase strong { color: var(--text); font-style: normal; }
+
+    /* input contraseña */
+    .password-section label {
+      display: block;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      text-align: left;
+    }
+
+    .password-row {
+      display: flex;
+      gap: 0.6rem;
+    }
+
+    .password-row input {
+      flex: 1;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.75rem 1rem;
+      color: var(--text);
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .password-row input:focus { border-color: var(--azul); }
+    .password-row input.error { border-color: var(--rojo); animation: shake 0.3s; }
+
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25%      { transform: translateX(-6px); }
+      75%      { transform: translateX(6px); }
+    }
+
+    .btn-ingresar {
+      background: var(--azul);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      padding: 0.75rem 1.4rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      white-space: nowrap;
+    }
+    .btn-ingresar:hover { background: #1f5aa0; }
+    .btn-ingresar:active { transform: scale(0.97); }
+
+    .error-msg {
+      color: var(--rojo);
+      font-size: 0.8rem;
+      margin-top: 0.5rem;
+      min-height: 1.2em;
+      text-align: left;
+    }
+
+    /* ─── MODAL AVISO ────────────────────────────────────────── */
+    #modal-aviso {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(4px);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    #modal-aviso.active { display: flex; }
+
+    .aviso-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 2.5rem;
+      max-width: 560px;
+      width: 100%;
+      box-shadow: var(--shadow);
+    }
+
+    .aviso-card h2 {
+      font-size: 1.2rem;
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .aviso-card h2 .icon-warn {
+      width: 28px; height: 28px;
+      background: var(--naranja);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    .aviso-card p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+      margin-bottom: 1rem;
+    }
+
+    .aviso-card p strong { color: var(--text); }
+
+    .aviso-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 1.2rem 0;
+    }
+
+    .btn-aceptar {
+      width: 100%;
+      background: var(--verde);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      padding: 0.85rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 0.5rem;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn-aceptar:hover { background: #237a47; }
+    .btn-aceptar:active { transform: scale(0.98); }
+
+    /* ─── APP PRINCIPAL ──────────────────────────────────────── */
+    #screen-app {
+      display: none;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    #screen-app.active { display: flex; }
+
+    /* HEADER */
+    .app-header {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .header-brand .logo-dots {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .header-brand .logo-dots span {
+      display: flex;
+      gap: 2px;
+    }
+    .header-brand .logo-dots span i {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      display: block;
+    }
+
+    .header-brand h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .header-brand h2 small {
+      font-weight: 400;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: block;
+      letter-spacing: 0;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .btn-cerrar {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text-muted);
+      padding: 0.4rem 0.9rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-cerrar:hover { border-color: var(--rojo); color: var(--rojo); }
+
+    /* NAV TABS */
+    .app-nav {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+    }
+
+    .nav-tab {
+      padding: 0.85rem 1.4rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      white-space: nowrap;
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .nav-tab:hover { color: var(--text); }
+    .nav-tab.active {
+      color: var(--text);
+      border-bottom-color: var(--azul);
+    }
+
+    /* CONTENT AREA */
+    .app-content {
+      flex: 1;
+      padding: 2rem;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* CARDS genéricas */
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .card h3 {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    /* NIVEL PILLS en dashboard */
+    .nivel-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.8rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .nivel-pill {
+      border-radius: var(--radius);
+      padding: 1.2rem 0.8rem;
+      text-align: center;
+      border: 1px solid transparent;
+    }
+    .nivel-pill .nivel-num { font-size: 2rem; font-weight: 700; }
+    .nivel-pill .nivel-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.8; margin-top: 0.2rem; }
+    .nivel-pill .nivel-count { font-size: 1.1rem; font-weight: 600; margin-top: 0.5rem; }
+    .nivel-pill .nivel-tiempo { font-size: 0.7rem; opacity: 0.7; }
+
+    .np-1 { background: var(--rojo-soft); color: var(--rojo); border-color: var(--rojo); }
+    .np-2 { background: var(--naranja-soft); color: var(--naranja); border-color: var(--naranja); }
+    .np-3 { background: var(--amarillo-soft); color: #a07c00; border-color: var(--amarillo); }
+    .np-4 { background: var(--verde-soft); color: var(--verde); border-color: var(--verde); }
+    .np-5 { background: var(--azul-soft); color: var(--azul); border-color: var(--azul); }
+
+    /* placeholder contenido próximas partes */
+    .coming-soon {
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 3rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    .coming-soon .big-icon { font-size: 2.5rem; margin-bottom: 0.8rem; }
+    .coming-soon p { max-width: 300px; margin: 0 auto; line-height: 1.6; }
+
+    /* ─── FOOTER ─────────────────────────────────────────────── */
+    .app-footer {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      padding: 0.8rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* ─── CLASIFICACIÓN ─────────────────────────────────────────── */
+    .clf-stepper { display:flex; align-items:center; margin-bottom:2rem; }
+    .clf-step { display:flex; align-items:center; gap:0.5rem; }
+    .clf-step-circle {
+      width:30px; height:30px; border-radius:50%;
+      background:var(--bg3); border:2px solid var(--border);
+      display:flex; align-items:center; justify-content:center;
+      font-size:0.78rem; font-weight:700; color:var(--text-muted);
+      flex-shrink:0; transition:all 0.25s;
+    }
+    .clf-step.active .clf-step-circle { background:var(--azul); border-color:var(--azul); color:#fff; }
+    .clf-step.done   .clf-step-circle { background:var(--verde); border-color:var(--verde); color:#fff; }
+    .clf-step-label { font-size:0.78rem; color:var(--text-muted); }
+    .clf-step.active .clf-step-label, .clf-step.done .clf-step-label { color:var(--text); }
+    .clf-connector { flex:1; height:2px; background:var(--border); margin:0 0.6rem; }
+
+    .motivos-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(128px,1fr)); gap:0.6rem; margin-bottom:1.2rem; }
+    .motivo-btn {
+      background:var(--bg3); border:1.5px solid var(--border);
+      border-radius:var(--radius); padding:0.8rem 0.5rem;
+      cursor:pointer; text-align:center; transition:all 0.18s; color:var(--text);
+    }
+    .motivo-btn:hover { border-color:var(--azul); }
+    .motivo-btn.selected { border-color:var(--azul); background:rgba(42,109,181,0.12); box-shadow:0 0 0 2px rgba(42,109,181,0.25); }
+    .motivo-icon { font-size:1.4rem; display:block; margin-bottom:0.3rem; }
+    .motivo-label { font-size:0.71rem; line-height:1.3; }
+
+    .vitals-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(145px,1fr)); gap:1rem; }
+    .vital-field label { display:block; font-size:0.71rem; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-muted); margin-bottom:0.3rem; }
+    .vital-field input {
+      width:100%; background:var(--bg3); border:1px solid var(--border);
+      border-radius:var(--radius); padding:0.6rem 0.8rem;
+      color:var(--text); font-size:1rem; font-family:var(--font-mono); outline:none; transition:border-color 0.2s;
+    }
+    .vital-field input:focus { border-color:var(--azul); }
+    .vital-unit { font-size:0.68rem; color:var(--text-muted); margin-top:0.15rem; }
+
+    .avpu-row { display:flex; gap:0.5rem; }
+    .avpu-btn {
+      flex:1; padding:0.7rem 0.4rem; border-radius:var(--radius);
+      border:1.5px solid var(--border); background:var(--bg3); color:var(--text);
+      cursor:pointer; font-size:1rem; font-weight:700; text-align:center; transition:all 0.18s; line-height:1.3;
+    }
+    .avpu-btn small { display:block; font-size:0.62rem; font-weight:400; color:var(--text-muted); margin-top:0.1rem; }
+    .avpu-btn:hover { border-color:var(--azul); }
+    .avpu-btn.selected { border-color:var(--azul); background:rgba(42,109,181,0.15); color:var(--azul); }
+
+    .pain-scale { display:flex; gap:0.3rem; flex-wrap:wrap; margin-top:0.5rem; }
+    .pain-btn {
+      width:34px; height:34px; border-radius:7px;
+      border:1.5px solid var(--border); background:var(--bg3);
+      color:var(--text-muted); cursor:pointer; font-size:0.8rem; font-weight:600;
+      display:flex; align-items:center; justify-content:center; transition:all 0.15s;
+    }
+    .pain-btn:hover { border-color:var(--text-muted); color:var(--text); }
+    .pain-btn[data-v="0"].selected  { color:var(--azul);    border-color:var(--azul);    background:rgba(42,109,181,0.15); }
+    .pain-btn[data-v="1"].selected,
+    .pain-btn[data-v="2"].selected  { color:var(--verde);   border-color:var(--verde);   background:rgba(46,158,91,0.15); }
+    .pain-btn[data-v="3"].selected,
+    .pain-btn[data-v="4"].selected  { color:#7ab830;        border-color:#7ab830;        background:rgba(122,184,48,0.15); }
+    .pain-btn[data-v="5"].selected,
+    .pain-btn[data-v="6"].selected  { color:var(--amarillo);border-color:var(--amarillo);background:rgba(232,193,58,0.15); }
+    .pain-btn[data-v="7"].selected,
+    .pain-btn[data-v="8"].selected  { color:var(--naranja); border-color:var(--naranja); background:rgba(224,122,21,0.15); }
+    .pain-btn[data-v="9"].selected,
+    .pain-btn[data-v="10"].selected { color:var(--rojo);    border-color:var(--rojo);    background:rgba(214,40,40,0.15); }
+
+    .result-card { border-radius:14px; padding:2rem; text-align:center; margin-bottom:1.2rem; border:2px solid; }
+    .result-num  { font-size:3.8rem; font-weight:800; line-height:1; }
+    .result-name { font-size:1.25rem; font-weight:700; margin:0.4rem 0; }
+    .result-tiempo { font-size:0.86rem; opacity:0.8; }
+    .rc-1 { background:var(--rojo-soft);    color:var(--rojo);    border-color:var(--rojo); }
+    .rc-2 { background:var(--naranja-soft); color:var(--naranja); border-color:var(--naranja); }
+    .rc-3 { background:var(--amarillo-soft);color:#9a7500;        border-color:var(--amarillo); }
+    .rc-4 { background:var(--verde-soft);   color:var(--verde);   border-color:var(--verde); }
+    .rc-5 { background:var(--azul-soft);    color:var(--azul);    border-color:var(--azul); }
+
+    .discriminadores { background:var(--bg3); border-radius:var(--radius); padding:0.9rem 1.1rem; margin-bottom:1rem; }
+    .discriminadores h4 { font-size:0.71rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); margin-bottom:0.5rem; }
+    .discriminadores ul { list-style:none; display:flex; flex-direction:column; gap:0.25rem; font-size:0.83rem; }
+    .discriminadores li::before { content:'→ '; color:var(--text-muted); }
+
+    .override-row { display:flex; align-items:center; gap:0.7rem; background:var(--bg3); border-radius:var(--radius); padding:0.7rem 1rem; margin-bottom:1rem; }
+    .override-row label { font-size:0.79rem; color:var(--text-muted); flex:1; }
+    .override-select { background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--text); padding:0.35rem 0.6rem; font-size:0.8rem; outline:none; cursor:pointer; }
+
+    .clf-nav { display:flex; justify-content:space-between; align-items:center; margin-top:1.3rem; gap:0.8rem; }
+    .btn-prev { padding:0.65rem 1.2rem; border-radius:var(--radius); background:var(--bg3); border:1px solid var(--border); color:var(--text-muted); font-size:0.85rem; font-weight:500; cursor:pointer; transition:all 0.18s; }
+    .btn-prev:hover { color:var(--text); border-color:var(--text-muted); }
+    .btn-next { padding:0.65rem 1.3rem; border-radius:var(--radius); background:var(--azul); color:#fff; border:none; font-size:0.85rem; font-weight:600; cursor:pointer; transition:background 0.18s; }
+    .btn-next:hover { background:#1f5aa0; }
+    .btn-guardar { flex:1; padding:0.7rem; border-radius:var(--radius); background:var(--verde); color:#fff; border:none; font-size:0.9rem; font-weight:600; cursor:pointer; transition:background 0.18s; }
+    .btn-guardar:hover { background:#237a47; }
+    .btn-nueva-clf { display:inline-flex; align-items:center; gap:0.4rem; background:var(--azul); color:#fff; border:none; border-radius:var(--radius); padding:0.6rem 1.2rem; font-size:0.84rem; font-weight:600; cursor:pointer; transition:background 0.18s; margin-top:1rem; }
+    .btn-nueva-clf:hover { background:#1f5aa0; }
+    @keyframes slideIn { from{transform:translateX(100%);opacity:0} to{transform:translateX(0);opacity:1} }
+    @keyframes blink-alerta { 0%,100%{opacity:1} 50%{opacity:0.45} }
+    .alerta-blink { animation:blink-alerta 1.2s ease-in-out infinite; }
+    .nivel-tiempo-vencido { color:var(--rojo) !important; font-weight:700 !important; opacity:1 !important; }
+
+    /* ─── PACIENTES ──────────────────────────────────────────────── */
+    .pac-toolbar { display:flex; gap:0.55rem; flex-wrap:wrap; margin-bottom:1.2rem; align-items:center; }
+    .pac-search { flex:1; min-width:160px; background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:0.57rem 0.85rem; color:var(--text); font-size:0.85rem; outline:none; transition:border-color 0.2s; }
+    .pac-search:focus { border-color:var(--azul); }
+    .pac-filter-sel { background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); color:var(--text); padding:0.53rem 0.72rem; font-size:0.81rem; outline:none; cursor:pointer; }
+    .pac-date-in { background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); color:var(--text); padding:0.5rem 0.62rem; font-size:0.79rem; outline:none; font-family:var(--font-mono); }
+    .btn-action { display:inline-flex; align-items:center; gap:0.35rem; background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); color:var(--text-muted); padding:0.53rem 0.88rem; font-size:0.8rem; font-weight:500; cursor:pointer; transition:all 0.18s; white-space:nowrap; }
+    .btn-action:hover { border-color:var(--azul); color:var(--text); }
+    .pac-table-wrap { overflow-x:auto; }
+    .pac-table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+    .pac-table th { background:var(--bg3); padding:0.58rem 0.82rem; text-align:left; font-size:0.69rem; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-muted); font-weight:500; border-bottom:1px solid var(--border); white-space:nowrap; }
+    .pac-table td { padding:0.63rem 0.82rem; border-bottom:1px solid rgba(45,55,72,0.5); vertical-align:middle; }
+    .pac-table tr:last-child td { border-bottom:none; }
+    .pac-table tr:hover td { background:rgba(255,255,255,0.03); }
+    .pac-table tr.row-n1 td { background:rgba(214,40,40,0.12); }
+    .pac-table tr.row-n2 td { background:rgba(224,122,21,0.12); }
+    [data-theme="light"] .pac-table tr.row-n1 td { background:rgba(214,40,40,0.10); }
+    [data-theme="light"] .pac-table tr.row-n2 td { background:rgba(224,122,21,0.10); }
+    .pac-table tr.row-n1:hover td { background:rgba(214,40,40,0.20); }
+    .pac-table tr.row-n2:hover td { background:rgba(224,122,21,0.20); }
+    .nivel-badge { display:inline-flex; align-items:center; gap:0.22rem; padding:0.2rem 0.52rem; border-radius:20px; font-size:0.73rem; font-weight:700; border:1px solid; white-space:nowrap; }
+    .nb-1{background:var(--rojo-soft);   color:var(--rojo);   border-color:var(--rojo);}
+    .nb-2{background:var(--naranja-soft);color:var(--naranja);border-color:var(--naranja);}
+    .nb-3{background:var(--amarillo-soft);color:#9a7500;      border-color:var(--amarillo);}
+    .nb-4{background:var(--verde-soft);  color:var(--verde);  border-color:var(--verde);}
+    .nb-5{background:var(--azul-soft);   color:var(--azul);   border-color:var(--azul);}
+    .modified-tag { display:inline-flex; align-items:center; gap:0.12rem; background:rgba(232,193,58,0.12); border:1px solid rgba(232,193,58,0.4); border-radius:4px; padding:0.07rem 0.33rem; font-size:0.64rem; color:var(--amarillo); margin-left:0.28rem; vertical-align:middle; }
+    .btn-del { background:transparent; border:1px solid transparent; border-radius:6px; color:var(--text-muted); padding:0.26rem 0.46rem; cursor:pointer; font-size:0.77rem; transition:all 0.15s; }
+    .btn-del:hover { border-color:var(--rojo); color:var(--rojo); background:rgba(214,40,40,0.08); }
+    .pac-footer { padding:0.62rem 1rem; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; font-size:0.77rem; color:var(--text-muted); }
+    .pac-empty { text-align:center; padding:3rem; color:var(--text-muted); font-size:0.87rem; }
+
+    /* ─── ESTADÍSTICAS ────────────────────────────────────────────── */
+    .est-period-row { display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom:1.5rem; align-items:center; }
+    .est-period-btn { padding:0.46rem 0.9rem; border-radius:20px; border:1px solid var(--border); background:var(--bg3); color:var(--text-muted); font-size:0.79rem; cursor:pointer; transition:all 0.18s; }
+    .est-period-btn:hover { border-color:var(--azul); color:var(--text); }
+    .est-period-btn.active { border-color:var(--azul); background:rgba(42,109,181,0.15); color:var(--azul); font-weight:600; }
+    .est-custom-range { display:none; align-items:center; gap:0.5rem; flex-wrap:wrap; }
+    .est-custom-range.visible { display:flex; }
+    .est-kpi-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(152px,1fr)); gap:0.72rem; margin-bottom:1.2rem; }
+    .est-kpi { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:1rem 1.05rem; }
+    .est-kpi-label { font-size:0.67rem; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-muted); margin-bottom:0.28rem; }
+    .est-kpi-value { font-size:1.6rem; font-weight:700; line-height:1; }
+    .est-kpi-sub { font-size:0.72rem; color:var(--text-muted); margin-top:0.22rem; }
+    .dist-row { display:flex; align-items:center; gap:0.75rem; margin-bottom:0.62rem; font-size:0.79rem; }
+    .dist-label-col { width:168px; flex-shrink:0; display:flex; align-items:center; gap:0.38rem; }
+    .dist-bars-col { flex:1; display:flex; flex-direction:column; gap:4px; }
+    .dist-bar-row { display:flex; align-items:center; gap:0.48rem; }
+    .dist-bar-track { flex:1; height:10px; background:var(--bg3); border-radius:20px; overflow:hidden; }
+    .dist-bar-fill { height:100%; border-radius:20px; min-width:2px; transition:width 0.5s ease; }
+    .dist-bar-n { font-size:0.72rem; color:var(--text-muted); font-family:var(--font-mono); min-width:25px; text-align:right; }
+    .dist-bar-type { font-size:0.62rem; color:var(--text-muted); min-width:52px; }
+    .donut-wrap { display:flex; align-items:center; gap:2rem; flex-wrap:wrap; }
+    .donut-legend { display:flex; flex-direction:column; gap:0.42rem; }
+    .donut-item { display:flex; align-items:center; gap:0.48rem; font-size:0.79rem; }
+    .donut-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+    .idx-table { width:100%; border-collapse:collapse; font-size:0.83rem; }
+    .idx-table th { font-size:0.69rem; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-muted); font-weight:500; padding:0.52rem 0.78rem; text-align:left; border-bottom:1px solid var(--border); }
+    .idx-table td { padding:0.62rem 0.78rem; border-bottom:1px solid rgba(45,55,72,0.4); }
+    .idx-table tr:last-child td { border-bottom:none; }
+    .idx-val { font-weight:700; }
+    .idx-up { color:var(--rojo); }
+    .idx-down { color:var(--verde); }
+    .idx-neutral { color:var(--azul); }
+
+    /* ─── BIBLIOGRAFÍA ────────────────────────────────────────── */
+    .bib-intro { background:var(--bg3); border-left:3px solid var(--azul); border-radius:0 var(--radius) var(--radius) 0; padding:1rem 1.3rem; margin-bottom:1.5rem; font-size:0.88rem; color:var(--text-muted); line-height:1.75; }
+    .bib-intro strong { color:var(--text); }
+    .bib-cat-title { font-size:0.69rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); font-weight:600; margin-bottom:0.9rem; display:flex; align-items:center; gap:0.6rem; }
+    .bib-cat-title::after { content:''; flex:1; height:1px; background:var(--border); }
+    .bib-ref { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; padding:1rem 1.1rem; background:var(--bg3); border-radius:var(--radius); margin-bottom:0.5rem; border:1px solid transparent; transition:border-color 0.18s; }
+    .bib-ref:hover { border-color:rgba(42,109,181,0.35); }
+    .bib-ref:last-child { margin-bottom:0; }
+    .bib-body { flex:1; min-width:0; }
+    .bib-title { font-size:0.87rem; font-weight:600; color:var(--text); line-height:1.45; margin-bottom:0.26rem; }
+    .bib-authors { font-size:0.79rem; color:var(--text-muted); margin-bottom:0.2rem; }
+    .bib-meta { display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; font-size:0.73rem; color:var(--text-muted); }
+    .bib-year { background:var(--bg2); border:1px solid var(--border); border-radius:4px; padding:0.04rem 0.36rem; font-family:var(--font-mono); }
+    .bib-source { font-style:italic; }
+    .btn-ver { display:inline-flex; align-items:center; gap:0.26rem; background:transparent; border:1px solid var(--border); border-radius:7px; color:var(--text-muted); padding:0.36rem 0.68rem; font-size:0.74rem; cursor:pointer; transition:all 0.18s; white-space:nowrap; flex-shrink:0; }
+    .btn-ver:hover { border-color:var(--azul); color:var(--azul); }
+
+    /* ─── TEMA ───────────────────────────────────────────────── */
+    .btn-theme { background:none; border:1px solid var(--border); border-radius:var(--radius); cursor:pointer; font-size:1rem; padding:0.3rem 0.6rem; line-height:1; transition:border-color 0.2s; }
+    .btn-theme:hover { border-color:var(--azul); }
+    .btn-icon-hdr { background:none; border:1px solid var(--border); border-radius:var(--radius); cursor:pointer; font-size:0.88rem; padding:0.3rem 0.6rem; line-height:1; color:var(--text-muted); transition:all 0.2s; }
+    .btn-icon-hdr:hover { border-color:var(--azul); color:var(--azul); }
+    #header-centro { font-size:0.72rem; color:var(--azul); display:none; font-weight:400; }
+
+    /* ─── MODAL CONFIG ───────────────────────────────────────── */
+    #modal-config { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(4px); z-index:9997; align-items:center; justify-content:center; padding:1.5rem; }
+    #modal-config.active { display:flex; }
+    .config-card { background:var(--bg2); border:1px solid var(--border); border-radius:18px; padding:2.2rem; max-width:440px; width:100%; box-shadow:var(--shadow); text-align:center; }
+    .config-hosp-icon { margin-bottom:1rem; color:var(--azul); }
+    .config-card h2 { font-size:1.1rem; margin-bottom:0.5rem; }
+    .config-card > p { font-size:0.86rem; color:var(--text-muted); margin-bottom:1.4rem; line-height:1.65; }
+    .config-form { text-align:left; display:flex; flex-direction:column; gap:0.85rem; margin-bottom:1.4rem; }
+    .config-field label { display:block; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.09em; color:var(--text-muted); margin-bottom:0.28rem; }
+    .config-field input { width:100%; background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:0.6rem 0.88rem; color:var(--text); font-size:0.9rem; outline:none; transition:border-color 0.2s; }
+    .config-field input:focus { border-color:var(--azul); }
+    .btn-config-save { width:100%; background:var(--azul); color:#fff; border:none; border-radius:var(--radius); padding:0.82rem; font-size:0.97rem; font-weight:600; cursor:pointer; transition:background 0.2s; }
+    .btn-config-save:hover { background:#1f5aa0; }
+    .btn-config-skip { display:block; width:100%; margin-top:0.7rem; background:none; border:none; color:var(--text-muted); font-size:0.79rem; cursor:pointer; text-decoration:underline; }
+    .btn-config-skip:hover { color:var(--text); }
+    .config-edit-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:0.9rem; }
+
+    /* ─── AA RANGO DATETIME ───────────────────────────────────── */
+    .aa-rango-row { display:flex; gap:0.9rem; flex-wrap:wrap; margin-bottom:0.9rem; padding:0.9rem 1rem; background:var(--bg3); border-radius:var(--radius); border:1px solid var(--border); }
+    .aa-rango-group label { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-muted); display:block; margin-bottom:0.3rem; }
+    .aa-rango-group .rango-inputs { display:flex; gap:0.4rem; }
+
+    /* ─── ANÁLISIS POR TURNOS ───────────────────────────────── */
+    .turnos-config { display:flex; flex-direction:column; gap:0.75rem; margin-bottom:1rem; }
+    .turnos-rango { display:flex; gap:0.9rem; flex-wrap:wrap; align-items:flex-end; }
+    .turnos-rango-group { display:flex; flex-direction:column; gap:0.25rem; }
+    .turnos-rango-group label { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-muted); }
+    .turnos-checks { display:flex; gap:0.45rem; flex-wrap:wrap; }
+    .turno-check { display:flex; align-items:center; gap:0.35rem; padding:0.38rem 0.72rem; background:var(--bg3); border-radius:20px; border:1px solid var(--border); font-size:0.79rem; cursor:pointer; transition:border-color 0.15s; }
+    .turno-check:has(input:checked) { border-color:var(--azul); background:rgba(42,109,181,0.09); }
+    .turno-check input { cursor:pointer; accent-color:var(--azul); }
+    .turno-check-hora { color:var(--text-muted); font-size:0.68rem; font-family:var(--font-mono); margin-left:0.15rem; }
+    .turno-custom-list { display:flex; flex-direction:column; gap:0.4rem; margin-top:0.5rem; }
+    .turno-custom-row { display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap; }
+    .turno-custom-row .pac-date-in { height:32px; font-size:0.8rem; }
+    .turno-custom-row .pac-date-in[type="text"] { flex:1; min-width:110px; }
+    .turno-custom-row .pac-date-in[type="time"] { width:90px; }
+    .turno-custom-del { background:none; border:1px solid var(--border); border-radius:50%; width:24px; height:24px; cursor:pointer; font-size:0.75rem; color:var(--text-muted); line-height:1; padding:0; transition:border-color 0.15s,color 0.15s; }
+    .turno-custom-del:hover { border-color:var(--rojo); color:var(--rojo); }
+    .turno-block { background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:0.85rem 1rem; margin-bottom:0.7rem; }
+    .turno-block-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:0.65rem; font-size:0.88rem; font-weight:600; }
+    .turno-hora-tag { color:var(--text-muted); font-size:0.72rem; font-family:var(--font-mono); font-weight:400; }
+    .turno-total-badge { font-size:0.75rem; font-weight:600; padding:0.18rem 0.55rem; border-radius:12px; background:rgba(42,109,181,0.12); color:var(--azul); border:1px solid rgba(42,109,181,0.25); }
+    .turno-meta { font-size:0.78rem; color:var(--text-muted); margin-top:0.6rem; padding-top:0.5rem; border-top:1px solid var(--border); }
+    .turno-meta strong { color:var(--text); }
+    /* ─── MOSTRAR/OCULTAR CONTRASEÑA ───────────────────────── */
+    .pwd-eye-wrap { position:relative; display:flex; align-items:center; }
+    .pwd-eye-wrap input { width:100%; }
+    .pwd-eye-wrap .pin-input { padding-right:2.6rem; }
+    .password-row .pwd-eye-wrap { flex:1; }
+    .password-row .pwd-eye-wrap input { padding-right:2.6rem; }
+    .btn-eye { position:absolute; right:0.55rem; background:none; border:none; cursor:pointer; color:var(--text-muted); font-size:1rem; padding:0.15rem 0.2rem; line-height:1; user-select:none; transition:color 0.15s; }
+    .btn-eye:hover { color:var(--text); }
+    /* ─── MODAL CONTRASEÑA ADMIN ────────────────────────────── */
+    #modal-admin-pass { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); backdrop-filter:blur(4px); z-index:9998; align-items:center; justify-content:center; padding:1.5rem; }
+    #modal-admin-pass.active { display:flex; }
+    .admin-pass-card { background:var(--bg2); border:1px solid var(--border); border-radius:14px; padding:2rem 2.2rem; max-width:330px; width:100%; box-shadow:var(--shadow); text-align:center; }
+    .admin-pass-card h3 { font-size:1rem; font-weight:700; margin-bottom:0.35rem; }
+    .admin-pass-card > p { font-size:0.82rem; color:var(--text-muted); margin-bottom:1.1rem; }
+    /* ─── PANTALLA SELECCIÓN USUARIO ───────────────────────── */
+    #screen-users { display:none; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:2rem; background:radial-gradient(ellipse at 50% 0%, #1a2a3a 0%, var(--bg) 70%); }
+    [data-theme="light"] #screen-users { background:radial-gradient(ellipse at 50% 0%, #d4e4f5 0%, var(--bg) 70%); }
+    #screen-users.active { display:flex; }
+    .users-card { background:var(--bg2); border:1px solid var(--border); border-radius:18px; padding:2rem 2.2rem; max-width:420px; width:100%; box-shadow:var(--shadow); }
+    .users-card h2 { font-size:1.1rem; font-weight:700; text-align:center; margin-bottom:0.3rem; }
+    .users-sub { font-size:0.82rem; color:var(--text-muted); text-align:center; margin-bottom:1.3rem; }
+    .users-list { display:flex; flex-direction:column; gap:0.42rem; margin-bottom:0.8rem; max-height:300px; overflow-y:auto; }
+    .user-btn { display:flex; align-items:center; gap:0.8rem; background:var(--bg3); border:1.5px solid var(--border); border-radius:var(--radius); padding:0.7rem 0.9rem; cursor:pointer; text-align:left; transition:all 0.18s; color:var(--text); width:100%; }
+    .user-btn:hover { border-color:var(--azul); background:rgba(42,109,181,0.07); }
+    .user-avatar { width:35px; height:35px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.74rem; font-weight:700; color:#fff; flex-shrink:0; }
+    .user-nombre { font-size:0.86rem; font-weight:600; }
+    .user-rol-tag { font-size:0.68rem; color:var(--text-muted); }
+    .btn-add-user { display:flex; align-items:center; justify-content:center; gap:0.4rem; width:100%; padding:0.55rem; background:none; border:1.5px dashed var(--border); border-radius:var(--radius); color:var(--text-muted); font-size:0.81rem; cursor:pointer; transition:all 0.18s; margin-top:0.4rem; }
+    .btn-add-user:hover { border-color:var(--azul); color:var(--azul); }
+    .add-user-panel { background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:1rem; margin-top:0.8rem; display:none; }
+    .add-user-panel.visible { display:block; }
+
+    /* ─── MODAL PIN ───────────────────────────────────────────── */
+    #modal-pin { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(4px); z-index:9996; align-items:center; justify-content:center; padding:1.5rem; }
+    #modal-pin.active { display:flex; }
+    .pin-card { background:var(--bg2); border:1px solid var(--border); border-radius:16px; padding:2rem; max-width:340px; width:100%; box-shadow:var(--shadow); text-align:center; }
+    .pin-card h3 { font-size:1rem; margin-bottom:0.35rem; }
+    .pin-sub { font-size:0.82rem; color:var(--text-muted); margin-bottom:1.1rem; line-height:1.6; }
+    .pin-input { width:100%; background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:0.68rem 1rem; color:var(--text); font-size:1.05rem; text-align:center; letter-spacing:0.18em; font-family:var(--font-mono); outline:none; margin-bottom:0.5rem; transition:border-color 0.2s; }
+    .pin-input:focus { border-color:var(--azul); }
+    .pin-input.error { border-color:var(--rojo); animation:shake 0.3s; }
+    .pin-error { color:var(--rojo); font-size:0.74rem; min-height:1.1em; margin-bottom:0.45rem; font-weight:500; }
+    .pin-success-msg { color:var(--verde); font-size:0.82rem; font-weight:600; text-align:center; margin-bottom:0.45rem; }
+    .pin-btns { display:flex; gap:0.5rem; }
+    .btn-pin-ok { flex:1; background:var(--azul); color:#fff; border:none; border-radius:var(--radius); padding:0.62rem; font-size:0.87rem; font-weight:600; cursor:pointer; transition:background 0.18s; }
+    .btn-pin-ok:hover { background:#1f5aa0; }
+    .btn-pin-cancel { background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); color:var(--text-muted); padding:0.62rem 0.85rem; font-size:0.82rem; cursor:pointer; }
+    .btn-pin-cancel:hover { border-color:var(--text-muted); }
+
+    /* ─── HEADER USER BADGE ───────────────────────────────────── */
+    .header-user-badge { display:flex; align-items:center; gap:0.45rem; padding:0.24rem 0.65rem 0.24rem 0.38rem; background:var(--bg3); border-radius:20px; border:1px solid var(--border); cursor:default; }
+    .huser-av { width:21px; height:21px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.58rem; font-weight:700; color:#fff; flex-shrink:0; }
+    .huser-info { line-height:1.25; }
+    .huser-nombre { font-size:0.74rem; font-weight:600; }
+    .huser-rol { font-size:0.6rem; color:var(--text-muted); display:block; }
+
+    /* ─── CONFIG ADMIN ────────────────────────────────────────── */
+    #modal-config-admin { display:none; position:fixed; inset:0; background:var(--bg); z-index:9995; flex-direction:column; overflow:hidden; }
+    #modal-config-admin.active { display:flex; }
+    .cfg-adm-bar { background:var(--bg2); border-bottom:1px solid var(--border); padding:0 1.5rem; height:52px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; gap:1rem; }
+    .cfg-adm-bar h2 { font-size:0.92rem; font-weight:700; white-space:nowrap; }
+    .cfg-adm-tabs { display:flex; gap:0; overflow-x:auto; flex:1; }
+    .cfg-tab { padding:0 1rem; height:52px; font-size:0.79rem; font-weight:500; color:var(--text-muted); cursor:pointer; border-bottom:2px solid transparent; background:none; border-top:none; border-left:none; border-right:none; white-space:nowrap; transition:all 0.18s; display:flex; align-items:center; }
+    .cfg-tab:hover { color:var(--text); }
+    .cfg-tab.active { color:var(--text); border-bottom-color:var(--azul); }
+    .cfg-adm-body { flex:1; overflow-y:auto; padding:1.6rem 2rem; max-width:820px; width:100%; margin:0 auto; }
+    .btn-cfg-close { background:none; border:1px solid var(--border); border-radius:var(--radius); color:var(--text-muted); padding:0.34rem 0.75rem; font-size:0.77rem; cursor:pointer; white-space:nowrap; }
+    .btn-cfg-close:hover { border-color:var(--rojo); color:var(--rojo); }
+    .cfg-usr-row { display:flex; align-items:center; gap:0.7rem; padding:0.65rem 0.9rem; background:var(--bg3); border-radius:var(--radius); margin-bottom:0.38rem; border:1px solid var(--border); }
+    .cfg-usr-info { flex:1; }
+    .cfg-usr-nombre { font-size:0.85rem; font-weight:600; }
+    .cfg-usr-meta { font-size:0.7rem; color:var(--text-muted); }
+    .tag-activo { font-size:0.65rem; padding:0.08rem 0.42rem; border-radius:10px; font-weight:600; background:rgba(46,158,91,0.12); color:var(--verde); border:1px solid rgba(46,158,91,0.28); }
+    .tag-inactivo { font-size:0.65rem; padding:0.08rem 0.42rem; border-radius:10px; font-weight:600; background:rgba(139,148,158,0.12); color:var(--text-muted); border:1px solid var(--border); }
+    .cfg-add-grid { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:0.55rem; align-items:end; margin-top:0.9rem; }
+    .ses-table { width:100%; border-collapse:collapse; font-size:0.78rem; }
+    .ses-table th { font-size:0.66rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); padding:0.46rem 0.62rem; text-align:left; border-bottom:1px solid var(--border); background:var(--bg3); }
+    .ses-table td { padding:0.45rem 0.62rem; border-bottom:1px solid rgba(45,55,72,0.28); }
+    [data-theme="light"] .ses-table td { border-bottom:1px solid var(--border); }
+    .ses-table tr:last-child td { border-bottom:none; }
+    .aud-mod { display:inline-flex; font-size:0.66rem; padding:0.08rem 0.36rem; border-radius:8px; font-weight:600; background:rgba(232,193,58,0.12); color:#9a7500; border:1px solid rgba(232,193,58,0.32); }
+    .cfg-filter-row { display:flex; gap:0.45rem; flex-wrap:wrap; margin-bottom:0.9rem; align-items:center; }
+    .btn-sm { background:var(--bg3); border:1px solid var(--border); border-radius:6px; color:var(--text-muted); padding:0.22rem 0.55rem; font-size:0.72rem; cursor:pointer; transition:all 0.15s; }
+    .btn-sm:hover { border-color:var(--azul); color:var(--azul); }
+    .btn-sm-danger:hover { border-color:var(--rojo); color:var(--rojo); }
+
+    /* ─── MODAL EVA ──────────────────────────────────────────── */
+    #modal-eva { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.72); z-index:9998; align-items:center; justify-content:center; padding:1rem; }
+    #modal-eva.active { display:flex; }
+    .modal-eva-box { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:1.5rem; max-width:460px; width:100%; box-shadow:var(--shadow); }
+    .modal-eva-box h3 { font-size:0.9rem; color:var(--text); margin-bottom:1rem; text-align:center; text-transform:none; letter-spacing:0; }
+    .eva-faces { display:grid; grid-template-columns:repeat(3,1fr); gap:0.75rem; }
+    .eva-face { background:var(--bg3); border-radius:var(--radius); padding:0.65rem 0.4rem; text-align:center; border:1px solid var(--border); }
+    .eva-face .ef-emoji { font-size:1.9rem; display:block; margin-bottom:0.25rem; }
+    .eva-face .ef-range { font-size:0.74rem; font-family:var(--font-mono); color:var(--azul); font-weight:600; display:block; }
+    .eva-face .ef-label { font-size:0.66rem; color:var(--text-muted); margin-top:0.15rem; }
+    .btn-info { background:none; border:none; cursor:pointer; font-size:0.95rem; padding:0 0.2rem 0 0.3rem; color:var(--text-muted); vertical-align:middle; opacity:0.65; transition:opacity 0.15s; line-height:1; }
+    .btn-info:hover { opacity:1; color:var(--azul); }
+    .modal-eva-close { display:block; width:100%; margin-top:1.1rem; padding:0.55rem; background:var(--bg3); color:var(--text); border:1px solid var(--border); border-radius:var(--radius); cursor:pointer; font-size:0.83rem; transition:background 0.15s; }
+    .modal-eva-close:hover { background:var(--border); }
+
+    /* ─── ANÁLISIS AVANZADO ───────────────────────────────────── */
+    #aa-card h3 { margin-bottom:0.9rem; }
+    .aa-selectors { display:flex; gap:0.9rem; flex-wrap:wrap; margin-bottom:1.1rem; }
+    .aa-select { flex:1; min-width:160px; background:var(--bg3); color:var(--text); border:1px solid var(--border); border-radius:var(--radius); padding:0.5rem 0.75rem; font-size:0.83rem; }
+    .aa-select:focus { outline:none; border-color:var(--azul); }
+    .aa-tabla { width:100%; border-collapse:collapse; font-size:0.81rem; margin-top:0.4rem; }
+    .aa-tabla th { background:var(--bg3); color:var(--text-muted); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.06em; padding:0.45rem 0.65rem; text-align:left; border-bottom:1px solid var(--border); }
+    .aa-tabla td { padding:0.42rem 0.65rem; border-bottom:1px solid var(--border); }
+    .aa-tabla tr:last-child td { border-bottom:none; }
+    .aa-tabla tr:hover td { background:var(--bg3); }
+    .aa-bar-wrap { width:100%; overflow-x:auto; margin-top:0.75rem; }
+    .aa-export-btn { margin-top:0.9rem; }
+    .aa-empty { color:var(--text-muted); font-size:0.84rem; padding:0.6rem 0; }
+
+    /* ─── RESPONSIVE ─────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .dist-label-col { width: 120px; }
+    }
+    @media (max-width: 640px) {
+      .welcome-card { padding: 2rem 1.5rem; }
+      .welcome-card h1 { font-size: 1.7rem; }
+      .nivel-grid { grid-template-columns: repeat(3, 1fr); }
+      .app-content { padding: 1rem; }
+      .app-header { padding: 0 1rem; }
+      .avpu-row { flex-wrap: wrap; }
+      .avpu-btn { min-width: calc(50% - 0.25rem); flex: none; }
+      .dist-label-col { width: 80px; font-size: 0.71rem; }
+      .dist-bar-type { display: none; }
+      .bib-ref { flex-direction: column; align-items: stretch; }
+      .btn-ver { align-self: flex-start; margin-top: 0.4rem; }
+      .est-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .pac-toolbar { flex-direction: column; align-items: stretch; }
+      .pac-search { min-width: unset; }
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     PANTALLA 1 — BIENVENIDA + CONTRASEÑA
+══════════════════════════════════════════════════════════════ -->
+<div id="screen-welcome">
+  <div class="welcome-card">
+
+    <div class="sut-badge">
+      <span class="dot"></span>
+      Sistema Uruguayo de Triage
+    </div>
+
+    <h1>SUT <span class="highlight">Triage</span></h1>
+    <p class="welcome-subtitle">
+      Clasificación asistencial estructurada y estandarizada<br>
+      basada en el Sistema Uruguayo de Triage
+    </p>
+
+    <div class="color-strip">
+      <div class="cs-r"></div>
+      <div class="cs-o"></div>
+      <div class="cs-y"></div>
+      <div class="cs-g"></div>
+      <div class="cs-b"></div>
+    </div>
+
+    <div class="frase">
+      <strong>"Clasificar es proteger."</strong><br>
+      El triage no es un diagnóstico — es el primer acto de justicia sanitaria.
+      Atender primero a quien más lo necesita es la mejor medicina.
+    </div>
+
+    <div class="password-section">
+      <label for="input-pass">Contraseña de acceso</label>
+      <div class="password-row">
+        <div class="pwd-eye-wrap">
+          <input
+            type="password"
+            id="input-pass"
+            placeholder="••••••••••"
+            autocomplete="off"
+            onkeydown="if(event.key==='Enter') checkPass()"
+          />
+          <button class="btn-eye" type="button" onclick="togglePwd('input-pass',this)" tabindex="-1">👁</button>
+        </div>
+        <button class="btn-ingresar" onclick="checkPass()">Ingresar</button>
+      </div>
+      <div class="error-msg" id="error-pass"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     MODAL — AVISO DE RESPONSABILIDAD
+══════════════════════════════════════════════════════════════ -->
+<div id="modal-aviso">
+  <div class="aviso-card">
+    <h2>
+      <span class="icon-warn">⚠</span>
+      Aviso de uso
+    </h2>
+
+    <p>
+      <strong>SUT Triage</strong> es una herramienta de apoyo a la clasificación clínica
+      y no reemplaza el juicio del profesional de salud. Su contenido tiene carácter
+      orientativo y puede contener inexactitudes.
+    </p>
+
+    <p>
+      Esta herramienta <strong>no almacena información en servidores externos.</strong>
+      Los datos clínicos ingresados quedan exclusivamente en este dispositivo.
+    </p>
+
+    <p>
+      <strong>SUT Triage no se responsabiliza por la confidencialidad de los datos ingresados.</strong>
+      La seguridad y el resguardo de la información son responsabilidad exclusiva
+      del usuario y de la institución que utiliza el sistema.
+    </p>
+
+    <div class="aviso-divider"></div>
+
+    <p>
+      Al continuar, el usuario declara conocer y aceptar estas condiciones,
+      asumiendo la responsabilidad sobre el uso de la herramienta y los
+      datos cargados.
+    </p>
+
+    <button class="btn-aceptar" onclick="aceptarAviso()">
+      Entiendo y acepto — Ingresar al sistema
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     PANTALLA 2 — SELECCIÓN DE USUARIO
+══════════════════════════════════════════════════════════════ -->
+<div id="screen-users">
+  <div class="users-card">
+    <h2>¿Quién sos?</h2>
+    <p class="users-sub">Seleccioná tu usuario para continuar</p>
+    <div id="users-list" class="users-list"></div>
+    <button class="btn-add-user" onclick="iniciarAgregarUsuario()">+ Agregar usuario</button>
+    <div class="add-user-panel" id="add-user-panel">
+      <div class="config-form">
+        <div class="config-field">
+          <label for="new-u-nombre">Nombre completo</label>
+          <input type="text" id="new-u-nombre" placeholder="Ej: María García" autocomplete="off" />
+        </div>
+        <div class="config-field">
+          <label for="new-u-rol">Rol</label>
+          <select id="new-u-rol" class="aa-select" style="width:100%">
+            <option value="medico">Médico/a</option>
+            <option value="enfermeria">Enfermería</option>
+            <option value="tecnico">Técnico/a</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.5rem">
+        <button class="btn-config-save" style="flex:1" onclick="crearUsuario()">Crear usuario</button>
+        <button class="btn-config-skip" style="text-decoration:none;padding:0.82rem 1rem;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-muted);cursor:pointer;font-size:0.83rem" onclick="cancelarAgregarUsuario()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     PANTALLA 3 — APLICACIÓN PRINCIPAL
+══════════════════════════════════════════════════════════════ -->
+<div id="screen-app">
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="logo-dots">
+        <span>
+          <i style="background:var(--rojo)"></i>
+          <i style="background:var(--naranja)"></i>
+        </span>
+        <span>
+          <i style="background:var(--verde)"></i>
+          <i style="background:var(--azul)"></i>
+        </span>
+      </div>
+      <h2>
+        SUT Triage
+        <small>Sistema Uruguayo de Triage</small>
+        <small id="header-centro"></small>
+      </h2>
+    </div>
+    <div class="header-right">
+      <span id="reloj" style="font-size:0.8rem;color:var(--text-muted);font-family:var(--font-mono)"></span>
+      <div class="header-user-badge" id="header-user-badge" style="display:none">
+        <div class="huser-av" id="huser-av"></div>
+        <div class="huser-info">
+          <div class="huser-nombre" id="huser-nombre">—</div>
+          <span class="huser-rol" id="huser-rol">—</span>
+        </div>
+      </div>
+      <button class="btn-theme" id="btn-theme" onclick="toggleTheme()" title="Cambiar modo claro/oscuro">🌙</button>
+      <button class="btn-icon-hdr" onclick="abrirConfigAdmin()" title="Configuración de administración">⚙️</button>
+      <button class="btn-cerrar" onclick="bloquear()">🔒 Bloquear</button>
+    </div>
+  </header>
+
+  <!-- NAVEGACIÓN -->
+  <nav class="app-nav">
+    <button class="nav-tab active" onclick="showTab('dashboard', this)">
+      📊 Resumen del día
+    </button>
+    <button class="nav-tab" onclick="showTab('clasificar', this)">
+      🏥 Clasificar paciente
+    </button>
+    <button class="nav-tab" onclick="showTab('pacientes', this)">
+      📋 Pacientes
+    </button>
+    <button class="nav-tab" onclick="showTab('estadisticas', this)">
+      📈 Estadísticas
+    </button>
+    <button class="nav-tab" onclick="showTab('bibliografia', this)">
+      📚 Bibliografía
+    </button>
+  </nav>
+
+  <!-- CONTENIDO -->
+  <main class="app-content">
+
+    <!-- TAB: DASHBOARD -->
+    <div id="tab-dashboard" class="tab-panel active">
+      <h2 style="font-size:1.3rem;margin-bottom:1.5rem;">
+        Panel en tiempo real
+        <span style="font-size:0.8rem;color:var(--text-muted);font-weight:400;margin-left:0.5rem;" id="fecha-hoy"></span>
+      </h2>
+
+      <div class="nivel-grid">
+        <div class="nivel-pill np-1" id="pill-1">
+          <div class="nivel-num">1</div>
+          <div class="nivel-label">🔴 Emergencia</div>
+          <div class="nivel-count" id="cnt-1">0</div>
+          <div class="nivel-tiempo" id="last-1">—</div>
+        </div>
+        <div class="nivel-pill np-2" id="pill-2">
+          <div class="nivel-num">2</div>
+          <div class="nivel-label">🟠 Urgencia ND</div>
+          <div class="nivel-count" id="cnt-2">0</div>
+          <div class="nivel-tiempo" id="last-2">—</div>
+        </div>
+        <div class="nivel-pill np-3" id="pill-3">
+          <div class="nivel-num">3</div>
+          <div class="nivel-label">🟡 Urgencia D</div>
+          <div class="nivel-count" id="cnt-3">0</div>
+          <div class="nivel-tiempo" id="last-3">—</div>
+        </div>
+        <div class="nivel-pill np-4" id="pill-4">
+          <div class="nivel-num">4</div>
+          <div class="nivel-label">🟢 No programable</div>
+          <div class="nivel-count" id="cnt-4">0</div>
+          <div class="nivel-tiempo" id="last-4">—</div>
+        </div>
+        <div class="nivel-pill np-5" id="pill-5">
+          <div class="nivel-num">5</div>
+          <div class="nivel-label">🔵 Programable</div>
+          <div class="nivel-count" id="cnt-5">0</div>
+          <div class="nivel-tiempo" id="last-5">—</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Resumen del día</h3>
+        <div id="alerta-n1n2"></div>
+        <p style="color:var(--text-muted);font-size:0.9rem;">
+          Total clasificados hoy: <strong id="total-hoy" style="color:var(--text)">0</strong> pacientes
+        </p>
+        <button class="btn-nueva-clf" onclick="showTab('clasificar',document.querySelectorAll('.nav-tab')[1]);resetClasificacion()">
+          + Nueva clasificación
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB: CLASIFICAR -->
+    <div id="tab-clasificar" class="tab-panel">
+
+      <div class="clf-stepper">
+        <div class="clf-step active" id="stp-1">
+          <div class="clf-step-circle">1</div>
+          <span class="clf-step-label">Motivo</span>
+        </div>
+        <div class="clf-connector"></div>
+        <div class="clf-step" id="stp-2">
+          <div class="clf-step-circle">2</div>
+          <span class="clf-step-label">Constantes</span>
+        </div>
+        <div class="clf-connector"></div>
+        <div class="clf-step" id="stp-3">
+          <div class="clf-step-circle">3</div>
+          <span class="clf-step-label">Resultado</span>
+        </div>
+      </div>
+
+      <!-- PASO 1 -->
+      <div id="clf-step1">
+        <div class="card">
+          <h3>Identificación</h3>
+          <div style="display:flex;gap:1rem;flex-wrap:wrap">
+            <div class="vital-field" style="max-width:280px">
+              <label for="clf-id">Código / iniciales (opcional)</label>
+              <input type="text" id="clf-id" placeholder="Ej: JRG · HC-12345" autocomplete="off" />
+            </div>
+            <div class="vital-field" style="max-width:140px">
+              <label for="clf-edad">Edad (años)</label>
+              <input type="number" id="clf-edad" placeholder="Ej: 45" min="0" max="120" />
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Motivo de consulta</h3>
+          <div class="motivos-grid">
+            <button class="motivo-btn" data-motivo="cardio"       onclick="selectMotivo(this)"><span class="motivo-icon">🫀</span><span class="motivo-label">Cardiorrespiratorio</span></button>
+            <button class="motivo-btn" data-motivo="neuro"        onclick="selectMotivo(this)"><span class="motivo-icon">🧠</span><span class="motivo-label">Neurológico</span></button>
+            <button class="motivo-btn" data-motivo="trauma"       onclick="selectMotivo(this)"><span class="motivo-icon">🤕</span><span class="motivo-label">Traumático</span></button>
+            <button class="motivo-btn" data-motivo="respiratorio" onclick="selectMotivo(this)"><span class="motivo-icon">🫁</span><span class="motivo-label">Respiratorio</span></button>
+            <button class="motivo-btn" data-motivo="digestivo"    onclick="selectMotivo(this)"><span class="motivo-icon">🤢</span><span class="motivo-label">Abdominal / Digestivo</span></button>
+            <button class="motivo-btn" data-motivo="gineco"       onclick="selectMotivo(this)"><span class="motivo-icon">🤰</span><span class="motivo-label">Gineco-obstétrico</span></button>
+            <button class="motivo-btn" data-motivo="urologico"    onclick="selectMotivo(this)"><span class="motivo-icon">🩺</span><span class="motivo-label">Urológico</span></button>
+            <button class="motivo-btn" data-motivo="psiquiatrico" onclick="selectMotivo(this)"><span class="motivo-icon">🧘</span><span class="motivo-label">Psiquiátrico</span></button>
+            <button class="motivo-btn" data-motivo="intox"        onclick="selectMotivo(this)"><span class="motivo-icon">💊</span><span class="motivo-label">Intoxicación</span></button>
+            <button class="motivo-btn" data-motivo="fiebre"       onclick="selectMotivo(this)"><span class="motivo-icon">🌡️</span><span class="motivo-label">Fiebre / Infección</span></button>
+            <button class="motivo-btn" data-motivo="pcr"          onclick="selectMotivo(this)"><span class="motivo-icon">🚨</span><span class="motivo-label">PCR / Sin pulso</span></button>
+            <button class="motivo-btn" data-motivo="otro"         onclick="selectMotivo(this)"><span class="motivo-icon">📋</span><span class="motivo-label">Otro</span></button>
+          </div>
+          <div class="vital-field">
+            <label for="clf-motivo-txt">Descripción libre (opcional)</label>
+            <input type="text" id="clf-motivo-txt" placeholder="Describí el motivo..." autocomplete="off" />
+          </div>
+        </div>
+        <div class="clf-nav">
+          <span></span>
+          <button class="btn-next" onclick="irPaso2()">Siguiente → Constantes</button>
+        </div>
+      </div>
+
+      <!-- PASO 2 -->
+      <div id="clf-step2" style="display:none">
+        <div class="card">
+          <h3>Nivel de conciencia — AVPU</h3>
+          <div class="avpu-row">
+            <button class="avpu-btn" data-avpu="A" onclick="selectAVPU(this)">A<small>Alerta</small></button>
+            <button class="avpu-btn" data-avpu="V" onclick="selectAVPU(this)">V<small>Responde voz</small></button>
+            <button class="avpu-btn" data-avpu="P" onclick="selectAVPU(this)">P<small>Responde dolor</small></button>
+            <button class="avpu-btn" data-avpu="U" onclick="selectAVPU(this)">U<small>Sin respuesta</small></button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Signos vitales <span style="font-size:0.75rem;text-transform:none;font-weight:400;color:var(--text-muted)">(dejar en blanco si no disponible)</span></h3>
+          <div class="vitals-grid">
+            <div class="vital-field">
+              <label for="clf-spo2">SpO₂</label>
+              <input type="number" id="clf-spo2" placeholder="98" min="50" max="100" />
+              <div class="vital-unit">%</div>
+            </div>
+            <div class="vital-field">
+              <label for="clf-fr">Frec. Respiratoria</label>
+              <input type="number" id="clf-fr" placeholder="16" min="0" max="60" />
+              <div class="vital-unit">resp/min</div>
+            </div>
+            <div class="vital-field">
+              <label for="clf-pas">PA Sistólica</label>
+              <input type="number" id="clf-pas" placeholder="120" min="0" max="300" />
+              <div class="vital-unit">mmHg</div>
+            </div>
+            <div class="vital-field">
+              <label for="clf-pad">PA Diastólica</label>
+              <input type="number" id="clf-pad" placeholder="80" min="0" max="200" />
+              <div class="vital-unit">mmHg</div>
+            </div>
+            <div class="vital-field">
+              <label for="clf-fc">Frec. Cardíaca</label>
+              <input type="number" id="clf-fc" placeholder="75" min="0" max="300" />
+              <div class="vital-unit">lat/min</div>
+            </div>
+            <div class="vital-field">
+              <label for="clf-temp">Temperatura</label>
+              <input type="number" id="clf-temp" placeholder="36.5" min="30" max="45" step="0.1" />
+              <div class="vital-unit">°C</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Escala de Dolor — EVA <button class="btn-info" onclick="openModalEva()" title="Ver escala de caras EVA">ℹ️</button></h3>
+          <div class="pain-scale" id="pain-scale"></div>
+          <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-muted);margin-top:0.4rem;padding:0 2px">
+            <span>0 — Sin dolor</span><span>10 — Insoportable</span>
+          </div>
+        </div>
+        <div class="clf-nav">
+          <button class="btn-prev" onclick="irPaso(1)">← Atrás</button>
+          <button class="btn-next" onclick="calcularYMostrar()">Calcular → Resultado</button>
+        </div>
+      </div>
+
+      <!-- PASO 3 -->
+      <div id="clf-step3" style="display:none">
+        <div id="result-card" class="result-card rc-5">
+          <div class="result-num" id="result-num">—</div>
+          <div class="result-name" id="result-name">—</div>
+          <div class="result-tiempo" id="result-tiempo">—</div>
+        </div>
+        <div class="discriminadores">
+          <h4>Discriminadores activados</h4>
+          <ul id="discriminadores-list"></ul>
+        </div>
+        <div class="override-row">
+          <label>Modificar según criterio clínico:</label>
+          <select class="override-select" id="override-nivel" onchange="aplicarOverride()">
+            <option value="">— Mantener sugerido —</option>
+            <option value="1">Nivel 1 — Emergencia</option>
+            <option value="2">Nivel 2 — Urgencia No Diferible</option>
+            <option value="3">Nivel 3 — Urgencia Diferible</option>
+            <option value="4">Nivel 4 — No Programable</option>
+            <option value="5">Nivel 5 — Programable</option>
+          </select>
+        </div>
+        <div class="clf-nav">
+          <button class="btn-prev" onclick="irPaso(2)">← Atrás</button>
+          <button class="btn-guardar" onclick="guardarPaciente()">✓ Guardar clasificación</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TAB: PACIENTES -->
+    <div id="tab-pacientes" class="tab-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.4rem;flex-wrap:wrap;gap:0.7rem;">
+        <h2 style="font-size:1.3rem;">Listado de pacientes</h2>
+        <button class="btn-action" onclick="exportarPacientesPDF()">⬇ Exportar PDF</button>
+      </div>
+      <div class="pac-toolbar">
+        <input class="pac-search" type="text" id="pac-search" placeholder="Buscar por código o motivo..." oninput="renderTabla()" />
+        <select class="pac-filter-sel" id="pac-filtro-nivel" onchange="renderTabla()">
+          <option value="">Todos los niveles</option>
+          <option value="1">🔴 Nivel 1 — Emergencia</option>
+          <option value="2">🟠 Nivel 2 — Urgencia ND</option>
+          <option value="3">🟡 Nivel 3 — Urgencia D</option>
+          <option value="4">🟢 Nivel 4 — No Programable</option>
+          <option value="5">🔵 Nivel 5 — Programable</option>
+        </select>
+        <input class="pac-date-in" type="date" id="pac-desde" onchange="renderTabla()" title="Desde" />
+        <input class="pac-date-in" type="date" id="pac-hasta" onchange="renderTabla()" title="Hasta" />
+        <button class="btn-action" onclick="limpiarFiltrosPac()">✕ Limpiar</button>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="pac-table-wrap">
+          <table class="pac-table">
+            <thead>
+              <tr>
+                <th>Fecha / Hora</th>
+                <th>Código</th>
+                <th>Motivo</th>
+                <th>Nivel asignado</th>
+                <th>Nivel sugerido</th>
+                <th>AVPU</th>
+                <th>Dolor</th>
+                <th>Tiempo</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="pac-tbody"></tbody>
+          </table>
+          <div id="pac-empty" class="pac-empty" style="display:none">
+            <div style="font-size:2rem;margin-bottom:0.5rem">🔍</div>
+            No hay pacientes con los filtros aplicados.
+          </div>
+        </div>
+        <div class="pac-footer">
+          <span id="pac-count">0 registros</span>
+          <span id="pac-count-ovr" style="color:var(--amarillo)"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: ESTADÍSTICAS -->
+    <div id="tab-estadisticas" class="tab-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.4rem;flex-wrap:wrap;gap:0.7rem;">
+        <h2 style="font-size:1.3rem;">Estadísticas</h2>
+        <button class="btn-action" onclick="exportarEstadisticasPDF()">⬇ Exportar PDF</button>
+      </div>
+
+      <div class="est-period-row">
+        <button class="est-period-btn active" data-periodo="hoy"    onclick="setPeriodo(this)">Hoy</button>
+        <button class="est-period-btn"         data-periodo="semana" onclick="setPeriodo(this)">Esta semana</button>
+        <button class="est-period-btn"         data-periodo="mes"   onclick="setPeriodo(this)">Este mes</button>
+        <button class="est-period-btn"         data-periodo="anio"  onclick="setPeriodo(this)">Este año</button>
+        <button class="est-period-btn"         data-periodo="custom" onclick="setPeriodo(this)">Rango personalizado</button>
+        <div class="est-custom-range" id="est-custom-range">
+          <input class="pac-date-in" type="date" id="est-desde" onchange="renderEstadisticas()" />
+          <input class="pac-date-in" type="time" id="est-desde-hora" value="00:00" style="width:90px" onchange="renderEstadisticas()" />
+          <span style="color:var(--text-muted);font-size:0.8rem">—</span>
+          <input class="pac-date-in" type="date" id="est-hasta" onchange="renderEstadisticas()" />
+          <input class="pac-date-in" type="time" id="est-hasta-hora" value="23:59" style="width:90px" onchange="renderEstadisticas()" />
+        </div>
+        <select id="est-filtro-usuario" class="aa-select" style="max-width:190px" onchange="renderEstadisticas()">
+          <option value="">👤 Todos los usuarios</option>
+        </select>
+      </div>
+
+      <div class="est-kpi-grid" id="est-kpis"></div>
+
+      <div class="card">
+        <h3>Distribución por nivel <span style="font-size:0.72rem;text-transform:none;font-weight:400;color:var(--text-muted)">— sistema vs profesional</span></h3>
+        <div id="est-dist"></div>
+      </div>
+
+      <div class="card">
+        <h3>Proporción del período</h3>
+        <div class="donut-wrap">
+          <svg id="est-donut" width="160" height="160" viewBox="0 0 160 160"></svg>
+          <div class="donut-legend" id="est-donut-legend"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Índices de calidad SUT</h3>
+        <div id="est-indices"></div>
+      </div>
+
+      <div class="card" id="aa-card">
+        <h3>Análisis Avanzado</h3>
+        <div class="aa-selectors">
+          <select id="aa-agrup" class="aa-select" onchange="onAgrupChange()">
+            <option value="hora">Por franja horaria</option>
+            <option value="diasemana">Por día de semana</option>
+            <option value="fecha">Por fecha específica</option>
+            <option value="rango">Por rango de fechas</option>
+            <option value="usuario">Por usuario</option>
+          </select>
+          <select id="aa-variable" class="aa-select" onchange="renderAnalisisAvanzado()">
+            <option value="total">Total de consultas</option>
+            <option value="nivel">Por nivel de color</option>
+            <option value="etario">Por grupo etario</option>
+          </select>
+        </div>
+        <div class="aa-rango-row" id="aa-rango-div" style="display:none">
+          <div class="aa-rango-group">
+            <label>Desde</label>
+            <div class="rango-inputs">
+              <input type="date" id="aa-desde-fecha" class="pac-date-in" onchange="renderAnalisisAvanzado()" />
+              <input type="time" id="aa-desde-hora" class="pac-date-in" value="00:00" onchange="renderAnalisisAvanzado()" />
+            </div>
+          </div>
+          <div class="aa-rango-group">
+            <label>Hasta</label>
+            <div class="rango-inputs">
+              <input type="date" id="aa-hasta-fecha" class="pac-date-in" onchange="renderAnalisisAvanzado()" />
+              <input type="time" id="aa-hasta-hora" class="pac-date-in" value="23:59" onchange="renderAnalisisAvanzado()" />
+            </div>
+          </div>
+        </div>
+        <div id="aa-result"></div>
+      </div>
+
+      <div class="card" id="turnos-card">
+        <h3>Análisis por Turnos</h3>
+        <div class="turnos-config">
+          <div class="turnos-rango">
+            <div class="turnos-rango-group">
+              <label>Desde</label>
+              <input type="date" id="turnos-desde" class="pac-date-in" />
+            </div>
+            <div class="turnos-rango-group">
+              <label>Hasta</label>
+              <input type="date" id="turnos-hasta" class="pac-date-in" />
+            </div>
+          </div>
+          <div class="turnos-checks">
+            <label class="turno-check"><input type="checkbox" value="manana" checked /> 🌅 Mañana <span class="turno-check-hora">08:00–12:00</span></label>
+            <label class="turno-check"><input type="checkbox" value="tarde" checked /> ☀️ Tarde <span class="turno-check-hora">12:00–16:00</span></label>
+            <label class="turno-check"><input type="checkbox" value="vespertino" checked /> 🌆 Vespertino <span class="turno-check-hora">16:00–20:00</span></label>
+            <label class="turno-check"><input type="checkbox" value="noche" checked /> 🌙 Noche <span class="turno-check-hora">20:00–00:00</span></label>
+            <label class="turno-check"><input type="checkbox" value="madrugada" checked /> 🌑 Madrugada <span class="turno-check-hora">00:00–08:00</span></label>
+          </div>
+          <div id="turnos-custom-list" class="turno-custom-list"></div>
+          <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-top:0.3rem">
+            <button class="btn-action" style="background:none;border:1px dashed var(--border);color:var(--text-muted);font-size:0.8rem;padding:0.3rem 0.7rem" onclick="agregarTurnoPersonalizado()">＋ Turno personalizado</button>
+            <button class="btn-action" onclick="generarAnalisisTurnos()">Generar análisis por turnos</button>
+          </div>
+        </div>
+        <div id="turnos-result"></div>
+      </div>
+
+    </div>
+
+    <!-- TAB: BIBLIOGRAFÍA -->
+    <div id="tab-bibliografia" class="tab-panel">
+      <h2 style="font-size:1.3rem;margin-bottom:1.4rem;">Bibliografía y Referencias</h2>
+
+      <div class="bib-intro">
+        El <strong>Sistema Uruguayo de Triage (SUT)</strong> es el modelo oficial de clasificación de
+        pacientes implementado en Uruguay para los servicios de urgencias y emergencias hospitalarios
+        y extrahospitalarios. Basado en la evidencia internacional y adaptado al contexto local, el SUT
+        establece cinco niveles de prioridad que guían la atención asistencial según la gravedad y urgencia
+        del cuadro clínico del paciente. Las siguientes referencias sustentan los principios conceptuales,
+        metodológicos y clínicos del sistema.
+      </div>
+
+      <!-- SUT -->
+      <div class="card">
+        <div class="bib-cat-title">🇺🇾 Sistema Uruguayo de Triage (SUT)</div>
+
+        <div class="bib-ref">
+          <div class="bib-body">
+            <div class="bib-title">Marco normativo del Sistema de Urgencias y Emergencias — Triage estructurado en instituciones de asistencia médica</div>
+            <div class="bib-authors">Ministerio de Salud Pública del Uruguay — Departamento de Emergencias</div>
+            <div class="bib-meta"><span class="bib-year">2019</span><span class="bib-source">MSP Uruguay, Montevideo</span></div>
+          </div>
+          <button class="btn-ver" onclick="abrirFuente('https://www.gub.uy/ministerio-salud-publica/','MSP Uruguay — Portal oficial')">🔗 Ver fuente</button>
+        </div>
+
+        <div class="bib-ref">
+          <div class="bib-body">
+            <div class="bib-title">Protocolos de atención en emergencias hospitalarias — Guía de buenas prácticas en urgencias</div>
+            <div class="bib-authors">División Salud de la Población, MSP Uruguay</div>
+            <div class="bib-meta"><span class="bib-year">2020</span><span class="bib-source">Ministerio de Salud Pública, Montevideo, Uruguay</span></div>
+          </div>
+          <button class="btn-ver" onclick="abrirFuente('https://www.gub.uy/ministerio-salud-publica/','MSP Uruguay — Portal oficial')">🔗 Ver fuente</button>
+        </div>
+
+        <div class="bib-ref">
+          <div class="bib-body">
+            <div class="bib-title">Plan Nacional de Reducción de Espera en Urgencias y Emergencias</div>
+            <div class="bib-authors">Ministerio de Salud Pública del Uruguay — Programa de reforma del sector salud</div>
+            <div class="bib-meta"><span class="bib-year">2021</span><span class="bib-source">MSP Uruguay / ASSE. Documento de gestión interna</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MTS -->
+      <div class="card">
+        <div class="bib-cat-title">🇬🇧 Manchester Triage System (MTS)</div>
+
+        <div class="bib-ref">
+          <div class="bib-body">
+            <div class="bib-title">Emergency Triage: Manchester Triage Group (3rd ed.)</div>
+            <div class="bib-authors">Mackway-Jones K, Marsden J, Windle J (eds.)</div>
+            <div class="bib-meta"><span class="bib-year">2014</span><span class="bib-source">Wiley-Blackwell, Oxford</span><span>ISBN: 978-1-118-39242-0</span></div>
+          </div>
+        </div>
+
+        <div class="bib-ref">
+          <div class="bib-body">
+            <div class="bib-title">A systematic review on the validity and reliability of an emergency department triage scale, the Manchester Triage System</div>
+            <div class="bib-authors">Parenti N, Reggiani MLB, Iannone P, Percudani D, Dowding D</div>
+            <div class="bib-meta"><span class="bib-year">2014</span><span class="bib-source">Int J Nurs Stud. 51(7):1062–1069</span></div>
+          </div>
+        </div>
+
+        <div class="bib-ref">
+          <div class="bib-body">
+            <div class="bib-title">Reproducibility of the Manchester Triage System in clinical practice: a review of interrater and intrarater reliability</div>
+            <div class="bib-authors">Storm-Versloot MN, Ubbink DT, Kappelhof J, Luitse JSK</div>
+            <div class="bib-meta"><span class="bib-year">2011</span><span class="bib-source">Emerg Med J. 28(6):504–509</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ESI -->
+      <div class="card">
+        <div class="bib-cat-title">🇺🇸 Emergency Severity Index (ESI)</div>
+
+        <div class="bib-ref">
+          <div class="bib-body">
+            <div class="bib-title">Emergency Severity Index (ESI): A Triage Tool for Emergency Department Care, Version 4 — Implementation Handbook</div>
+            <div class="bib-authors">Gilboy N, Tanabe P, Travers D, Rosenau AM</div>
+            <div class="bib-meta"><span class="bib-year">2012</span><span class="bib-source">AHRQ Publication No. 12-0014. Agency for Healthcare Research and Quality, Rockville, MD</span></div>
+          </div>
+          <button class="btn-ver" onclick="abrirFuente('https://www.ahrq.gov/','AHRQ — Agency for Healthcare Research and Quality')">🔗 Ver fuente</button>
+        </div>
+
+        <div class="bib-ref">
+          <div class="bib-body">
+            <div class="bib-title">Reliability and validity of a new five-level triage instrument</div>
+            <div class="bib-authors">Wuerz RC, Milne LW, Eitel DR, Travers D, Gilboy N</div>
+            <div class="bib-meta"><span class="bib-year">2000</span><span class="bib-source">Acad Emerg Med. 7(3):236–242</span><span>PMID: 10730829</span></div>
+          </div>
+        </div>
+
+        <div class="bib-ref">
+          <div class="bib-body">
+            <div class="bib-title">Modern Triage in the Emergency Department</div>
+            <div class="bib-authors">Christ M, Grossmann F, Winter D, Bingisser R, Platz E</div>
+            <div class="bib-meta"><span class="bib-year">2010</span><span class="bib-source">Dtsch Arztebl Int. 107(50):892–898</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAT / SET -->
+      <div class="card">
+        <div class="bib-cat-title">🇦🇩 Modelo Andorrano de Triage (MAT / SET)</div>
+
+        <div class="bib-ref">
+          <div class="bib-body">
+            <div class="bib-title">Sistema Español de Triage (SET): El modelo andorrano de triage (MAT) y el programa de ayuda al triage (PAT)</div>
+            <div class="bib-authors">Gómez Jiménez J</div>
+            <div class="bib-meta"><span class="bib-year">2003</span><span class="bib-source">Emergencias. 15(Supl.):S1–S20</span></div>
+          </div>
+          <button class="btn-ver" onclick="abrirFuente('https://www.semes.org/','SEMES — Sociedad Española de Medicina de Urgencias y Emergencias')">🔗 Ver fuente</button>
+        </div>
+
+        <div class="bib-ref">
+          <div class="bib-body">
+            <div class="bib-title">Validez del Sistema Español de Triage comparado con un triage independiente realizado por médicos</div>
+            <div class="bib-authors">Ferreras Amez JM, Ibáñez Sanz P, Capel JA, Lorente MA</div>
+            <div class="bib-meta"><span class="bib-year">2006</span><span class="bib-source">Emergencias. 18:211–224</span></div>
+          </div>
+        </div>
+
+        <div class="bib-ref">
+          <div class="bib-body">
+            <div class="bib-title">Triage: herramienta fundamental en urgencias y emergencias</div>
+            <div class="bib-authors">Gómez Jiménez J, Murray MJ, Lerberg H</div>
+            <div class="bib-meta"><span class="bib-year">2012</span><span class="bib-source">Anales Sis San Navarra. 35(1):5–7</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- OMS -->
+      <div class="card">
+        <div class="bib-cat-title">🌐 OMS / Triage en catástrofes y emergencias masivas</div>
+
+        <div class="bib-ref">
+          <div class="bib-body">
+            <div class="bib-title">Emergency Triage Assessment and Treatment (ETAT): Manual for Participants</div>
+            <div class="bib-authors">World Health Organization</div>
+            <div class="bib-meta"><span class="bib-year">2005</span><span class="bib-source">WHO Press, Geneva. ISBN: 978-92-4-154687-6</span></div>
+          </div>
+          <button class="btn-ver" onclick="abrirFuente('https://www.who.int/publications/i/item/emergency-triage-assessment-and-treatment-(etat)','WHO — Emergency Triage Assessment and Treatment (ETAT)')">🔗 Ver fuente</button>
+        </div>
+
+        <div class="bib-ref">
+          <div class="bib-body">
+            <div class="bib-title">Mass Casualty Management Systems: Strategies and Guidelines for Building Health Sector Capacity</div>
+            <div class="bib-authors">World Health Organization</div>
+            <div class="bib-meta"><span class="bib-year">2007</span><span class="bib-source">WHO Press, Geneva. ISBN: 978-92-4-154740-8</span></div>
+          </div>
+          <button class="btn-ver" onclick="abrirFuente('https://www.who.int/','WHO — World Health Organization')">🔗 Ver fuente</button>
+        </div>
+
+        <div class="bib-ref">
+          <div class="bib-body">
+            <div class="bib-title">Mass casualty triage: an evaluation of the data and development of a proposed national guideline</div>
+            <div class="bib-authors">Lerner EB, Schwartz RB, Cooke T, et al.</div>
+            <div class="bib-meta"><span class="bib-year">2008</span><span class="bib-source">Disaster Med Public Health Prep. 2(Suppl 1):S25–34</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- MODAL EVA -->
+  <div id="modal-eva" onclick="if(event.target===this)closeModalEva()">
+    <div class="modal-eva-box">
+      <h3>Escala Visual Analógica del Dolor — EVA</h3>
+      <div class="eva-faces">
+        <div class="eva-face"><span class="ef-emoji">😊</span><span class="ef-range">0 – 1</span><div class="ef-label">Sin dolor / mínimo</div></div>
+        <div class="eva-face"><span class="ef-emoji">🙂</span><span class="ef-range">2 – 3</span><div class="ef-label">Dolor leve</div></div>
+        <div class="eva-face"><span class="ef-emoji">😐</span><span class="ef-range">4 – 5</span><div class="ef-label">Dolor moderado</div></div>
+        <div class="eva-face"><span class="ef-emoji">😟</span><span class="ef-range">6 – 7</span><div class="ef-label">Dolor intenso</div></div>
+        <div class="eva-face"><span class="ef-emoji">😣</span><span class="ef-range">8 – 9</span><div class="ef-label">Dolor severo</div></div>
+        <div class="eva-face"><span class="ef-emoji">😭</span><span class="ef-range">10</span><div class="ef-label">Insoportable</div></div>
+      </div>
+      <button class="modal-eva-close" onclick="closeModalEva()">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="app-footer">
+    <span>SUT Triage v1.0 — Sistema Uruguayo de Triage · 2025</span>
+    <span>Los datos se almacenan localmente en este dispositivo</span>
+  </footer>
+
+</div><!-- /screen-app -->
+
+<!-- MODAL CONFIG INSTITUCIONAL — outside screen-app -->
+<div id="modal-config">
+  <div class="config-card">
+    <div class="config-hosp-icon">
+      <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg" style="color:var(--azul)">
+        <rect x="6" y="20" width="40" height="28" rx="2" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.1"/>
+        <rect x="14" y="10" width="24" height="12" rx="2" stroke="currentColor" stroke-width="2.5" fill="currentColor" fill-opacity="0.1"/>
+        <rect x="23.5" y="23" width="5" height="11" rx="1" fill="currentColor"/>
+        <rect x="20.5" y="26" width="11" height="5" rx="1" fill="currentColor"/>
+        <rect x="21.5" y="36" width="9" height="12" rx="1" fill="currentColor" fill-opacity="0.55"/>
+      </svg>
+    </div>
+    <h2>Configuración institucional</h2>
+    <p>Ingresá los datos de tu centro asistencial. Esta información aparecerá en todos los reportes PDF exportados.</p>
+    <div class="config-form">
+      <div class="config-field">
+        <label for="cfg-centro">Nombre del centro</label>
+        <input type="text" id="cfg-centro" placeholder="Ej: Hospital de Artigas" autocomplete="organization" />
+      </div>
+      <div class="config-field">
+        <label for="cfg-ciudad">Ciudad</label>
+        <input type="text" id="cfg-ciudad" placeholder="Ej: Artigas" />
+      </div>
+      <div class="config-field">
+        <label for="cfg-depto">Departamento</label>
+        <input type="text" id="cfg-depto" placeholder="Ej: Artigas" />
+      </div>
+    </div>
+    <button class="btn-config-save" onclick="guardarConfig()">Guardar y continuar</button>
+    <button class="btn-config-skip" onclick="saltarConfig()">Omitir por ahora</button>
+  </div>
+</div>
+
+<!-- MODAL PIN — outside screen-app so it works from the user-selection screen -->
+<div id="modal-pin">
+  <div class="pin-card">
+    <h3 id="pin-titulo">Ingresá tu cédula</h3>
+    <p class="pin-sub" id="pin-sub">Ingresá tu cédula para continuar</p>
+    <div class="pwd-eye-wrap">
+      <input type="password" class="pin-input" id="pin-input" placeholder="••••••••" maxlength="12" autocomplete="off" onkeydown="if(event.key==='Enter')verificarPin()" />
+      <button class="btn-eye" type="button" onclick="togglePwd('pin-input',this)" tabindex="-1">👁</button>
+    </div>
+    <div id="pin-confirm-wrap" style="display:none">
+      <div class="pwd-eye-wrap">
+        <input type="password" class="pin-input" id="pin-confirm" placeholder="Confirmá tu cédula" maxlength="12" autocomplete="off" onkeydown="if(event.key==='Enter')verificarPin()" />
+        <button class="btn-eye" type="button" onclick="togglePwd('pin-confirm',this)" tabindex="-1">👁</button>
+      </div>
+    </div>
+    <div class="pin-error" id="pin-error"></div>
+    <div class="pin-success-msg" id="pin-success" style="display:none"></div>
+    <div class="pin-btns" id="pin-btns-wrap">
+      <button class="btn-pin-ok" onclick="verificarPin()">Ingresar</button>
+      <button class="btn-pin-cancel" onclick="cancelarPin()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONTRASEÑA ADMIN -->
+<div id="modal-admin-pass">
+  <div class="admin-pass-card">
+    <h3>⚙️ Acceso de administración</h3>
+    <p>Ingresá la contraseña para acceder a la configuración</p>
+    <div class="pwd-eye-wrap" style="margin-bottom:0.5rem">
+      <input type="password" class="pin-input" id="adm-pass-input" style="letter-spacing:0.1em" placeholder="Contraseña" maxlength="20" autocomplete="off" onkeydown="if(event.key==='Enter')confirmarAdminPass()" />
+      <button class="btn-eye" type="button" onclick="togglePwd('adm-pass-input',this)" tabindex="-1">👁</button>
+    </div>
+    <div class="pin-error" id="adm-pass-err"></div>
+    <div class="pin-btns">
+      <button class="btn-pin-ok" onclick="confirmarAdminPass()">Acceder</button>
+      <button class="btn-pin-cancel" onclick="cancelarAdminPass()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIG ADMIN (full-screen overlay) — outside screen-app -->
+<div id="modal-config-admin">
+  <div class="cfg-adm-bar">
+    <h2>⚙️ Configuración</h2>
+    <div class="cfg-adm-tabs">
+      <button class="cfg-tab active" data-tab="usuarios" onclick="showCfgTab('usuarios')">👥 Usuarios</button>
+      <button class="cfg-tab" data-tab="institucional" onclick="showCfgTab('institucional')">🏥 Datos institucionales</button>
+      <button class="cfg-tab" data-tab="sesiones" onclick="showCfgTab('sesiones')">📋 Sesiones</button>
+      <button class="cfg-tab" data-tab="auditoria" onclick="showCfgTab('auditoria')">🔍 Auditoría</button>
+    </div>
+    <button class="btn-cfg-close" onclick="cerrarConfigAdmin()">✕ Cerrar</button>
+  </div>
+  <div class="cfg-adm-body" id="cfg-adm-body"></div>
+</div>
+
+<script>
+  // ─── TEMA CLARO / OSCURO ────────────────────────────────────
+  function updateThemeBtn(theme) {
+    const btn = document.getElementById('btn-theme');
+    if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+  }
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('sut_theme', next);
+    updateThemeBtn(next);
+  }
+  // Init button icon on load
+  (function(){ updateThemeBtn(document.documentElement.getAttribute('data-theme')||'light'); })();
+
+  // ─── CONTRASEÑA ─────────────────────────────────────────────
+  const PASS = 'suttriage1';
+
+  function checkPass() {
+    const val = document.getElementById('input-pass').value;
+    const inp = document.getElementById('input-pass');
+    const err = document.getElementById('error-pass');
+
+    if (val === PASS) {
+      err.textContent = '';
+      inp.classList.remove('error');
+      const acepto = localStorage.getItem('sut_aviso_aceptado');
+      if (acepto) {
+        mostrarUsersScreen();
+      } else {
+        document.getElementById('modal-aviso').classList.add('active');
+      }
+    } else {
+      inp.classList.add('error');
+      err.textContent = 'Contraseña incorrecta. Intentá de nuevo.';
+      inp.value = '';
+      setTimeout(() => inp.classList.remove('error'), 400);
+    }
+  }
+
+  function aceptarAviso() {
+    localStorage.setItem('sut_aviso_aceptado', 'true');
+    document.getElementById('modal-aviso').classList.remove('active');
+    mostrarUsersScreen();
+  }
+
+  function mostrarApp() {
+    document.getElementById('screen-welcome').style.display = 'none';
+    document.getElementById('screen-users').classList.remove('active');
+    document.getElementById('screen-app').classList.add('active');
+    iniciarReloj();
+    actualizarFecha();
+    cargarContadores();
+    cargarConfig();
+    populateUserFilter();
+  }
+
+  // ─── CONFIG INSTITUCIONAL ────────────────────────────────────
+  function guardarConfig() {
+    const centro = document.getElementById('cfg-centro').value.trim();
+    const ciudad = document.getElementById('cfg-ciudad').value.trim();
+    const depto  = document.getElementById('cfg-depto').value.trim();
+    localStorage.setItem('sut_config', JSON.stringify({ centro, ciudad, depto }));
+    document.getElementById('modal-config').classList.remove('active');
+    cargarConfig();
+  }
+
+  function saltarConfig() {
+    localStorage.setItem('sut_config', JSON.stringify({ centro:'', ciudad:'', depto:'' }));
+    document.getElementById('modal-config').classList.remove('active');
+  }
+
+  function _entrarApp(user) {
+    const badge=document.getElementById('header-user-badge');
+    const av=document.getElementById('huser-av');
+    if (badge&&av) {
+      av.textContent=inicialesNombre(user.nombre);
+      av.style.background=colorPorRol(user.rol);
+      document.getElementById('huser-nombre').textContent=user.nombre.split(' ')[0];
+      document.getElementById('huser-rol').textContent=labelRol(user.rol);
+      badge.style.display='flex';
+    }
+    mostrarApp();
+  }
+
+  function mostrarConfigModal() {
+    document.getElementById('modal-config').classList.add('active');
+  }
+
+  function cargarConfig() {
+    const raw = localStorage.getItem('sut_config');
+    if (!raw) return;
+    const cfg = JSON.parse(raw);
+    const el = document.getElementById('cfg-centro'); if (el) el.value = cfg.centro||'';
+    const ec = document.getElementById('cfg-ciudad'); if (ec) ec.value = cfg.ciudad||'';
+    const ed = document.getElementById('cfg-depto');  if (ed) ed.value  = cfg.depto||'';
+    const hdr = document.getElementById('header-centro');
+    if (hdr) {
+      if (cfg.centro) {
+        hdr.textContent = cfg.centro + (cfg.ciudad ? ' · ' + cfg.ciudad : '');
+        hdr.style.display = 'block';
+      } else {
+        hdr.style.display = 'none';
+      }
+    }
+  }
+
+  function getCentroInfo() {
+    const raw = localStorage.getItem('sut_config');
+    return raw ? JSON.parse(raw) : null;
+  }
+
+  function cerrarSesion() {
+    document.getElementById('screen-app').classList.remove('active');
+    document.getElementById('screen-welcome').style.display = 'flex';
+    document.getElementById('input-pass').value = '';
+  }
+
+  // ─── TABS ────────────────────────────────────────────────────
+  function showTab(id, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+    btn.classList.add('active');
+    if (id==='dashboard')    cargarContadores();
+    if (id==='pacientes')    renderTabla();
+    if (id==='estadisticas') renderEstadisticas();
+  }
+
+  // ─── RELOJ ───────────────────────────────────────────────────
+  function iniciarReloj() {
+    function tick() {
+      const now = new Date();
+      document.getElementById('reloj').textContent =
+        now.toLocaleTimeString('es-UY', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+    tick();
+    setInterval(tick, 1000);
+  }
+
+  function actualizarFecha() {
+    const hoy = new Date().toLocaleDateString('es-UY', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+    document.getElementById('fecha-hoy').textContent = hoy;
+  }
+
+  setInterval(() => {
+    if (document.getElementById('tab-dashboard')?.classList.contains('active')) {
+      cargarContadores();
+    }
+  }, 30000);
+
+  // ─── CONTADORES (localStorage) ───────────────────────────────
+  function cargarContadores() {
+    const hoy = new Date().toISOString().split('T')[0];
+    const datos = JSON.parse(localStorage.getItem('sut_pacientes') || '[]');
+    const hoyData = datos.filter(p => p.fecha && p.fecha.startsWith(hoy));
+    const total = hoyData.length;
+    document.getElementById('total-hoy').textContent = total;
+    const now = Date.now();
+    const THRESHOLD_MIN = {1:0, 2:5, 3:30, 4:120};
+    for (let i = 1; i <= 5; i++) {
+      const pac = hoyData.filter(p => p.nivel == i);
+      document.getElementById('cnt-' + i).textContent = pac.length;
+      const lastEl = document.getElementById('last-' + i);
+      if (!lastEl) continue;
+      if (!pac.length) { lastEl.textContent = '—'; lastEl.className = 'nivel-tiempo'; continue; }
+      const last = pac.reduce((a,b) => new Date(a.fecha) > new Date(b.fecha) ? a : b);
+      const diffMin = Math.floor((now - new Date(last.fecha).getTime()) / 60000);
+      const th = THRESHOLD_MIN[i];
+      const label = diffMin < 60 ? diffMin + ' min' : Math.floor(diffMin/60) + ' h';
+      if (th !== undefined && diffMin >= th) {
+        lastEl.textContent = label + ' ⚠';
+        lastEl.className = 'nivel-tiempo nivel-tiempo-vencido';
+      } else {
+        lastEl.textContent = label;
+        lastEl.className = 'nivel-tiempo';
+      }
+    }
+    const n1Count = hoyData.filter(p => p.nivel === 1).length;
+    const n2Vencidos = hoyData.filter(p => p.nivel === 2 && (now - new Date(p.fecha).getTime()) > 5 * 60 * 1000).length;
+    const alertEl = document.getElementById('alerta-n1n2');
+    if (alertEl) {
+      let html = '';
+      if (n1Count > 0) {
+        html += `<div class="alerta-blink" style="background:rgba(214,40,40,0.18);border:2px solid var(--rojo);border-radius:var(--radius);padding:0.55rem 1rem;margin-bottom:0.5rem;font-size:0.88rem;font-weight:700;color:var(--rojo)">
+          🔴 ${n1Count} paciente${n1Count>1?'s':''} N1 — Atención inmediata requerida
+        </div>`;
+      }
+      if (n2Vencidos > 0) {
+        html += `<div style="background:rgba(224,122,21,0.15);border:1.5px solid var(--naranja);border-radius:var(--radius);padding:0.55rem 1rem;margin-bottom:0.5rem;font-size:0.86rem;font-weight:600;color:var(--naranja)">
+          🟠 ${n2Vencidos} paciente${n2Vencidos>1?'s':''} N2 — Superaron los 5 minutos de espera
+        </div>`;
+      }
+      alertEl.innerHTML = html;
+    }
+  }
+
+  // ─── CLASIFICACIÓN ──────────────────────────────────────────
+  let clfMotivo = null, clfAVPU = null, clfDolor = null, clfNivelSug = null, clfDisc = [];
+
+  const NIVELES_INFO = {
+    1: { name:'Emergencia',            tiempo:'Atención inmediata (0 min)', cls:'rc-1', emoji:'🔴' },
+    2: { name:'Urgencia No Diferible', tiempo:'Tiempo máximo: 5 min',       cls:'rc-2', emoji:'🟠' },
+    3: { name:'Urgencia Diferible',    tiempo:'Tiempo máximo: 30 min',      cls:'rc-3', emoji:'🟡' },
+    4: { name:'No Programable',        tiempo:'Tiempo máximo: 120 min',     cls:'rc-4', emoji:'🟢' },
+    5: { name:'Programable',           tiempo:'Tiempo: > 120 min',          cls:'rc-5', emoji:'🔵' },
+  };
+
+  const DERIVACION_MAP = {
+    1: 'Sala de Reanimación',
+    2: 'Urgencias (inmediato)',
+    3: 'Urgencias (diferible)',
+    4: 'Consulta General',
+    5: 'Policlínica Programada',
+  };
+
+  (function initPainScale() {
+    const c = document.getElementById('pain-scale');
+    for (let i = 0; i <= 10; i++) {
+      const b = document.createElement('button');
+      b.className = 'pain-btn'; b.dataset.v = i; b.textContent = i;
+      b.onclick = () => {
+        document.querySelectorAll('.pain-btn').forEach(x => x.classList.remove('selected'));
+        b.classList.add('selected'); clfDolor = i;
+      };
+      c.appendChild(b);
+    }
+  })();
+
+  function selectMotivo(btn) {
+    document.querySelectorAll('.motivo-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected'); clfMotivo = btn.dataset.motivo;
+  }
+
+  function selectAVPU(btn) {
+    document.querySelectorAll('.avpu-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected'); clfAVPU = btn.dataset.avpu;
+  }
+
+  function irPaso(n) {
+    [1,2,3].forEach(i => {
+      document.getElementById('clf-step'+i).style.display = i===n ? 'block' : 'none';
+      const s = document.getElementById('stp-'+i);
+      s.className = 'clf-step' + (i<n?' done':i===n?' active':'');
+    });
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  function irPaso2() {
+    if (!clfMotivo) { alert('Seleccioná un motivo de consulta antes de continuar.'); return; }
+    irPaso(2);
+  }
+
+  function calcularNivelSUT() {
+    const avpu  = clfAVPU || 'A';
+    const spo2  = parseFloat(document.getElementById('clf-spo2').value) || null;
+    const fr    = parseFloat(document.getElementById('clf-fr').value)   || null;
+    const paS   = parseFloat(document.getElementById('clf-pas').value)  || null;
+    const fc    = parseFloat(document.getElementById('clf-fc').value)   || null;
+    const temp  = parseFloat(document.getElementById('clf-temp').value) || null;
+    const dolor = clfDolor !== null ? clfDolor : 0;
+    const motivo = clfMotivo || 'otro';
+    const d = [];
+
+    if (motivo==='pcr')                              { d.push('Paro cardiorrespiratorio referido'); return [1,d]; }
+    if (avpu==='U')                                  { d.push('Sin respuesta (AVPU = U)'); return [1,d]; }
+    if (avpu==='P')                                  { d.push('Responde solo a dolor (AVPU = P)'); return [1,d]; }
+    if (spo2!==null&&spo2<85)                        { d.push(`SpO₂ crítica: ${spo2}% (< 85%)`); return [1,d]; }
+    if (fr!==null&&(fr>30||fr<8))                    { d.push(`FR crítica: ${fr} resp/min`); return [1,d]; }
+    if (paS!==null&&paS<70)                          { d.push(`Hipotensión severa: PAS ${paS} mmHg`); return [1,d]; }
+    if (fc!==null&&(fc>180||fc<30))                  { d.push(`FC crítica: ${fc} lat/min`); return [1,d]; }
+
+    const d2=[];
+    if (avpu==='V')                                  d2.push('Compromiso de conciencia (AVPU = V)');
+    if (spo2!==null&&spo2<93)                        d2.push(`SpO₂ baja: ${spo2}% (< 93%)`);
+    if (fr!==null&&(fr>25||fr<10))                   d2.push(`FR muy alterada: ${fr} resp/min`);
+    if (paS!==null&&paS<90)                          d2.push(`Hipotensión: PAS ${paS} mmHg`);
+    if (paS!==null&&paS>220)                         d2.push(`HTA severa: PAS ${paS} mmHg`);
+    if (fc!==null&&(fc>150||fc<40))                  d2.push(`FC muy alterada: ${fc} lat/min`);
+    if (temp!==null&&(temp>40||temp<35))             d2.push(`Temperatura crítica: ${temp}°C`);
+    if (dolor>=8)                                    d2.push(`Dolor severo: ${dolor}/10`);
+    if (motivo==='cardio')                           d2.push('Motivo cardiorrespiratorio (dolor torácico / disnea)');
+    if (motivo==='neuro')                            d2.push('Motivo neurológico (ACV, convulsión, cefalea aguda)');
+    if (motivo==='intox')                            d2.push('Intoxicación / sobredosis');
+    if (d2.length) return [2,d2];
+
+    const d3=[];
+    if (spo2!==null&&spo2<95)                        d3.push(`SpO₂ levemente baja: ${spo2}%`);
+    if (fr!==null&&(fr>20||fr<12))                   d3.push(`FR fuera de rango: ${fr} resp/min`);
+    if (paS!==null&&(paS<100||paS>180))              d3.push(`PA alterada: ${paS} mmHg`);
+    if (fc!==null&&(fc>120||fc<50))                  d3.push(`FC alterada: ${fc} lat/min`);
+    if (temp!==null&&temp>38.5)                      d3.push(`Fiebre alta: ${temp}°C`);
+    if (dolor>=5)                                    d3.push(`Dolor moderado: ${dolor}/10`);
+    if (motivo==='trauma')                           d3.push('Traumatismo — requiere evaluación');
+    if (motivo==='gineco')                           d3.push('Motivo gineco-obstétrico');
+    if (d3.length) return [3,d3];
+
+    const d4=[];
+    if (dolor>=1)                                    d4.push(`Dolor leve: ${dolor}/10`);
+    if (temp!==null&&temp>37.5)                      d4.push(`Temperatura subfebril: ${temp}°C`);
+    if (motivo&&motivo!=='otro'&&!d4.length)         d4.push('Motivo de consulta con constantes dentro de límites');
+    if (d4.length) return [4,d4];
+
+    return [5,['Constantes vitales dentro de parámetros normales','Sin criterios de urgencia detectados']];
+  }
+
+  function calcularYMostrar() {
+    const [nivel,disc] = calcularNivelSUT();
+    clfNivelSug = nivel; clfDisc = disc;
+    document.getElementById('override-nivel').value = '';
+    renderResultado(nivel, disc);
+    irPaso(3);
+  }
+
+  function renderResultado(nivel, disc) {
+    const info = NIVELES_INFO[nivel];
+    document.getElementById('result-card').className = 'result-card '+info.cls;
+    document.getElementById('result-num').textContent = nivel;
+    document.getElementById('result-name').textContent = info.emoji+' '+info.name;
+    document.getElementById('result-tiempo').textContent = info.tiempo;
+    document.getElementById('discriminadores-list').innerHTML = disc.map(d=>`<li>${d}</li>`).join('');
+  }
+
+  function aplicarOverride() {
+    const val = document.getElementById('override-nivel').value;
+    renderResultado(val ? parseInt(val) : clfNivelSug, clfDisc);
+  }
+
+  function guardarPaciente() {
+    const override = document.getElementById('override-nivel').value;
+    const nivelFinal = override ? parseInt(override) : clfNivelSug;
+    const reg = {
+      id: document.getElementById('clf-id').value||'—',
+      edad: parseInt(document.getElementById('clf-edad').value)||null,
+      usuarioId: usuarioActivo?.id||null,
+      usuarioNombre: usuarioActivo?.nombre||null,
+      motivo: clfMotivo,
+      motivoTexto: document.getElementById('clf-motivo-txt').value,
+      avpu: clfAVPU||'A',
+      spo2: document.getElementById('clf-spo2').value,
+      fr:   document.getElementById('clf-fr').value,
+      paS:  document.getElementById('clf-pas').value,
+      paD:  document.getElementById('clf-pad').value,
+      fc:   document.getElementById('clf-fc').value,
+      temp: document.getElementById('clf-temp').value,
+      dolor: clfDolor,
+      nivel: nivelFinal,
+      nivelSugerido: clfNivelSug,
+      discriminadores: clfDisc,
+      override: !!override,
+      fecha: new Date().toISOString(),
+    };
+    const datos = JSON.parse(localStorage.getItem('sut_pacientes')||'[]');
+    datos.push(reg);
+    localStorage.setItem('sut_pacientes', JSON.stringify(datos));
+    mostrarResumenPaciente(reg);
+  }
+
+  function resetClasificacion() {
+    clfMotivo=null; clfAVPU=null; clfDolor=null; clfNivelSug=null; clfDisc=[];
+    document.querySelectorAll('.motivo-btn,.avpu-btn,.pain-btn').forEach(b=>b.classList.remove('selected'));
+    ['clf-id','clf-edad','clf-motivo-txt','clf-spo2','clf-fr','clf-pas','clf-pad','clf-fc','clf-temp'].forEach(id=>{
+      const el=document.getElementById(id); if(el) el.value='';
+    });
+    const ov=document.getElementById('override-nivel'); if(ov) ov.value='';
+    irPaso(1);
+  }
+
+  function mostrarToast(msg, nivel) {
+    const c={1:'var(--rojo)',2:'var(--naranja)',3:'var(--amarillo)',4:'var(--verde)',5:'var(--azul)'}[nivel]||'var(--azul)';
+    const t=document.createElement('div');
+    t.style.cssText=`position:fixed;bottom:1.5rem;right:1.5rem;background:var(--bg2);`+
+      `border:1px solid ${c};border-left:4px solid ${c};border-radius:var(--radius);`+
+      `padding:0.9rem 1.3rem;font-size:0.86rem;color:var(--text);box-shadow:var(--shadow);`+
+      `z-index:9999;max-width:300px;animation:slideIn 0.3s ease;`;
+    t.textContent='✓ Paciente guardado — '+msg;
+    document.body.appendChild(t);
+    setTimeout(()=>t.remove(),4000);
+  }
+
+  function mostrarResumenPaciente(reg) {
+    const ni = NIVELES_INFO[reg.nivel] || {};
+    const area = DERIVACION_MAP[reg.nivel] || '—';
+    const mot = MOTIVOS_MAP[reg.motivo] || reg.motivo || '—';
+    const colorMap = {1:'var(--rojo)',2:'var(--naranja)',3:'var(--amarillo)',4:'var(--verde)',5:'var(--azul)'};
+    const c = colorMap[reg.nivel] || 'var(--azul)';
+    const prev = document.getElementById('resumen-pac-overlay');
+    if (prev) prev.remove();
+    const el = document.createElement('div');
+    el.id = 'resumen-pac-overlay';
+    el.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9998;`+
+      `background:var(--bg2);border:2px solid ${c};border-radius:var(--radius);padding:1.6rem 2.2rem;`+
+      `box-shadow:var(--shadow);min-width:260px;max-width:90vw;text-align:center;`;
+    function _dismiss() {
+      el.remove();
+      resetClasificacion();
+      cargarContadores();
+      showTab('dashboard', document.querySelector('.nav-tab'));
+    }
+    el.innerHTML = `
+      <div style="font-size:2rem;margin-bottom:0.4rem">${ni.emoji||''}</div>
+      <div style="font-size:1.15rem;font-weight:700;color:${c};margin-bottom:0.5rem">N${reg.nivel} — ${ni.name||''}</div>
+      <div style="font-size:0.86rem;color:var(--text-muted);margin-bottom:0.2rem">Código: <strong style="color:var(--text)">${reg.id||'—'}</strong></div>
+      <div style="font-size:0.86rem;color:var(--text-muted);margin-bottom:0.2rem">Motivo: <strong style="color:var(--text)">${mot}</strong></div>
+      <div style="font-size:0.86rem;color:var(--text-muted);margin-bottom:1.1rem">Derivar a: <strong style="color:var(--text)">${area}</strong></div>
+      <button class="btn-action" id="resumen-pac-btn">Continuar</button>
+    `;
+    document.body.appendChild(el);
+    document.getElementById('resumen-pac-btn').onclick = _dismiss;
+    const timer = setTimeout(_dismiss, 3000);
+    document.getElementById('resumen-pac-btn').addEventListener('click', () => clearTimeout(timer), { once: true });
+  }
+
+  function tiempoTranscurrido(fechaISO) {
+    if (!fechaISO) return '—';
+    const diff = Math.floor((Date.now() - new Date(fechaISO).getTime()) / 60000);
+    if (diff < 1) return '< 1 min';
+    if (diff < 60) return diff + ' min';
+    const h = Math.floor(diff / 60);
+    if (h < 24) return h + ' h';
+    return Math.floor(h / 24) + ' d';
+  }
+
+  // ─── PACIENTES & ESTADÍSTICAS — constantes ──────────────────
+  const MOTIVOS_MAP = {
+    cardio:'Cardiorrespiratorio', neuro:'Neurológico', trauma:'Traumático',
+    respiratorio:'Respiratorio', digestivo:'Digestivo / Abdominal', gineco:'Gineco-obstétrico',
+    urologico:'Urológico', psiquiatrico:'Psiquiátrico', intox:'Intoxicación',
+    fiebre:'Fiebre / Infección', pcr:'PCR / Sin pulso', otro:'Otro'
+  };
+  const NIVEL_COLORS = {1:'#D62828',2:'#E07A15',3:'#E8C13A',4:'#2E9E5B',5:'#2A6DB5'};
+  const NIVEL_EMOJIS = ['','🔴','🟠','🟡','🟢','🔵'];
+
+  // ─── TAB PACIENTES ───────────────────────────────────────────
+  function renderTabla() {
+    const q      = (document.getElementById('pac-search')?.value||'').toLowerCase().trim();
+    const filtNv = document.getElementById('pac-filtro-nivel')?.value||'';
+    const desde  = document.getElementById('pac-desde')?.value||'';
+    const hasta  = document.getElementById('pac-hasta')?.value||'';
+    const todos  = JSON.parse(localStorage.getItem('sut_pacientes')||'[]');
+
+    const filtrados = todos.reduce((acc,p,i)=>{
+      const fecha = p.fecha?p.fecha.split('T')[0]:'';
+      if (desde&&fecha<desde) return acc;
+      if (hasta&&fecha>hasta) return acc;
+      if (filtNv&&String(p.nivel)!==filtNv) return acc;
+      if (q) {
+        const hay=[p.id||'',MOTIVOS_MAP[p.motivo]||p.motivo||'',p.motivoTexto||''].join(' ').toLowerCase();
+        if (!hay.includes(q)) return acc;
+      }
+      acc.push({...p,_idx:i}); return acc;
+    },[]);
+
+    const tbody=document.getElementById('pac-tbody');
+    const empty=document.getElementById('pac-empty');
+    const count=document.getElementById('pac-count');
+    const ovrEl=document.getElementById('pac-count-ovr');
+
+    if (!filtrados.length) {
+      tbody.innerHTML=''; empty.style.display='block';
+      count.textContent='0 registros'; ovrEl.textContent=''; return;
+    }
+    empty.style.display='none';
+    const mods=filtrados.filter(p=>p.override).length;
+    count.textContent=`${filtrados.length} registro${filtrados.length!==1?'s':''}`;
+    ovrEl.textContent=mods?`${mods} con nivel modificado por el profesional`:'';
+
+    tbody.innerHTML=filtrados.map(p=>{
+      const d=p.fecha?new Date(p.fecha):null;
+      const fStr=d?d.toLocaleDateString('es-UY',{day:'2-digit',month:'2-digit',year:'numeric'}):'—';
+      const hStr=d?d.toLocaleTimeString('es-UY',{hour:'2-digit',minute:'2-digit'}):'';
+      const mot=MOTIVOS_MAP[p.motivo]||p.motivo||'—';
+      const nf=p.nivel||0, ns=p.nivelSugerido||0;
+      const bFin=nf?`<span class="nivel-badge nb-${nf}">${NIVEL_EMOJIS[nf]} N${nf}</span>`:'—';
+      const bSug=ns?`<span class="nivel-badge nb-${ns}">${NIVEL_EMOJIS[ns]} N${ns}</span>`:'—';
+      const modTag=p.override?`<span class="modified-tag">✏ modificado</span>`:'';
+      const rowCls=p.nivel===1?'row-n1':p.nivel===2?'row-n2':'';
+      return `<tr class="${rowCls}">
+        <td><span style="font-family:var(--font-mono);font-size:0.78rem">${fStr}</span><br><span style="color:var(--text-muted);font-size:0.73rem">${hStr}</span></td>
+        <td>${p.id||'—'}</td>
+        <td>${mot}${p.motivoTexto?`<br><span style="color:var(--text-muted);font-size:0.72rem">${p.motivoTexto}</span>`:''}</td>
+        <td>${bFin}${modTag}</td>
+        <td>${bSug}</td>
+        <td><code style="font-size:0.81rem">${p.avpu||'—'}</code></td>
+        <td>${p.dolor!=null&&p.dolor!==undefined?p.dolor+'/10':'—'}</td>
+        <td style="font-family:var(--font-mono);font-size:0.77rem;color:var(--text-muted)">${tiempoTranscurrido(p.fecha)}</td>
+        <td><button class="btn-del" onclick="eliminarPaciente(${p._idx})" title="Eliminar">🗑</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function limpiarFiltrosPac() {
+    ['pac-search','pac-filtro-nivel','pac-desde','pac-hasta'].forEach(id=>{
+      const el=document.getElementById(id); if(el) el.value='';
+    });
+    renderTabla();
+  }
+
+  function eliminarPaciente(idx) {
+    if (!confirm('¿Eliminar este registro? Esta acción no se puede deshacer.')) return;
+    const datos=JSON.parse(localStorage.getItem('sut_pacientes')||'[]');
+    datos.splice(idx,1);
+    localStorage.setItem('sut_pacientes',JSON.stringify(datos));
+    cargarContadores(); renderTabla();
+  }
+
+  function addPdfFooter(doc) {
+    const cfg = getCentroInfo();
+    const centro = cfg && cfg.centro ? ' — ' + cfg.centro : '';
+    const fecha = new Date().toLocaleString('es-UY', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    const text = 'Generado por SUT Triage' + centro + ' — ' + fecha;
+    const pageH = doc.internal.pageSize.height;
+    const pageW = doc.internal.pageSize.width;
+    doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.setTextColor(150);
+    doc.text(text, 14, pageH - 7);
+    doc.text('Pág. ' + doc.internal.getCurrentPageInfo().pageNumber, pageW - 14, pageH - 7, {align:'right'});
+    doc.setTextColor(0);
+  }
+
+  function pdfHeader(doc, titulo, subtitulo) {
+    const cfg = getCentroInfo();
+    doc.setFontSize(14); doc.setFont('helvetica','bold');
+    doc.text('SUT Triage — ' + titulo, 14, 16);
+    let y = 23;
+    doc.setFontSize(8.5); doc.setFont('helvetica','normal'); doc.setTextColor(100);
+    if (cfg && cfg.centro) {
+      doc.text(cfg.centro + (cfg.ciudad?' · '+cfg.ciudad:'') + (cfg.depto?' — Dpto. '+cfg.depto:''), 14, y); y+=6;
+    }
+    if (subtitulo) { doc.text(subtitulo, 14, y); y+=6; }
+    const genUser = typeof usuarioActivo !== 'undefined' && usuarioActivo ? ' · Usuario: '+usuarioActivo.nombre : '';
+    doc.text('Generado: '+new Date().toLocaleString('es-UY')+genUser, 14, y); y+=6;
+    doc.setTextColor(0);
+    return y;
+  }
+
+  function exportarPacientesPDF() {
+    if (!window.jspdf) { alert('La librería PDF no está disponible. Revisá tu conexión a internet.'); return; }
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:'landscape'});
+    const todos=JSON.parse(localStorage.getItem('sut_pacientes')||'[]');
+    const startY=pdfHeader(doc,'Listado de Pacientes',null);
+    const rows=todos.map(p=>{
+      const d=p.fecha?new Date(p.fecha):null;
+      return [
+        d?d.toLocaleDateString('es-UY'):'—',
+        d?d.toLocaleTimeString('es-UY',{hour:'2-digit',minute:'2-digit'}):'—',
+        p.id||'—',
+        MOTIVOS_MAP[p.motivo]||p.motivo||'—',
+        `N${p.nivel||'—'}`,
+        `N${p.nivelSugerido||'—'}`,
+        p.override?'Sí':'No',
+        p.avpu||'—',
+        p.dolor!=null?`${p.dolor}/10`:'—',
+      ];
+    });
+    doc.autoTable({startY,head:[['Fecha','Hora','Código','Motivo','Nivel final','Sug.','Modif.','AVPU','Dolor']],body:rows,styles:{fontSize:7.5,cellPadding:2},headStyles:{fillColor:[42,109,181],textColor:255,fontStyle:'bold'},alternateRowStyles:{fillColor:[245,245,250]}});
+    doc.save(`sut-pacientes-${new Date().toISOString().split('T')[0]}.pdf`);
+  }
+
+  // ─── TAB ESTADÍSTICAS ────────────────────────────────────────
+  let estPeriodo = 'hoy';
+
+  function setPeriodo(btn) {
+    document.querySelectorAll('.est-period-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    estPeriodo=btn.dataset.periodo;
+    document.getElementById('est-custom-range').classList.toggle('visible',estPeriodo==='custom');
+    renderEstadisticas();
+  }
+
+  function getEstFechas() {
+    const now=new Date();
+    let desde, hasta=new Date(now); hasta.setHours(23,59,59,999);
+    if (estPeriodo==='hoy') {
+      desde=new Date(now); desde.setHours(0,0,0,0);
+    } else if (estPeriodo==='semana') {
+      desde=new Date(now);
+      const d=desde.getDay(); desde.setDate(desde.getDate()-(d===0?6:d-1)); desde.setHours(0,0,0,0);
+    } else if (estPeriodo==='mes') {
+      desde=new Date(now.getFullYear(),now.getMonth(),1);
+    } else if (estPeriodo==='anio') {
+      desde=new Date(now.getFullYear(),0,1);
+    } else {
+      const dv=document.getElementById('est-desde')?.value;
+      const dh=document.getElementById('est-desde-hora')?.value||'00:00';
+      const hv=document.getElementById('est-hasta')?.value;
+      const hh=document.getElementById('est-hasta-hora')?.value||'23:59';
+      desde=dv?new Date(dv+'T'+dh+':00'):new Date(now.getFullYear(),0,1);
+      hasta=hv?new Date(hv+'T'+hh+':59'):hasta;
+    }
+    return [desde,hasta];
+  }
+
+  function renderEstadisticas() {
+    populateUserFilter();
+    const datos=JSON.parse(localStorage.getItem('sut_pacientes')||'[]');
+    const [desde,hasta]=getEstFechas();
+    const uFiltro=document.getElementById('est-filtro-usuario')?.value||'';
+    const periodo=datos.filter(p=>{
+      if (!p.fecha) return false;
+      const f=new Date(p.fecha); if(f<desde||f>hasta) return false;
+      if (uFiltro && p.usuarioId!==uFiltro) return false;
+      return true;
+    });
+    renderKPIs(periodo); renderDistribucion(periodo); drawDonut(periodo); renderIndices(periodo); renderAnalisisAvanzado(periodo);
+  }
+
+  function renderKPIs(data) {
+    const total=data.length;
+    const mods=data.filter(p=>p.override).length;
+    const pct=total?Math.round(mods/total*100):0;
+    const cnt=[0,0,0,0,0,0];
+    data.forEach(p=>{ if(p.nivel>=1&&p.nivel<=5) cnt[p.nivel]++; });
+    const mx=cnt.indexOf(Math.max(...cnt.slice(1)));
+    const info=mx>0?NIVELES_INFO[mx]:null;
+    const conEdad=data.filter(p=>p.edad!=null&&p.edad>=0);
+    const edadProm=conEdad.length?Math.round(conEdad.reduce((s,p)=>s+p.edad,0)/conEdad.length):null;
+    document.getElementById('est-kpis').innerHTML=[
+      {label:'Total del período',  value:total,     sub:'clasificaciones'},
+      {label:'Nivel más frecuente',value:info?`N${mx}`:'-', sub:info?`${info.emoji} ${info.name}`:'Sin datos'},
+      {label:'Edad promedio',      value:edadProm!=null?edadProm+'a':'—', sub:conEdad.length?`${conEdad.length} pacientes con edad registrada`:'Sin datos de edad'},
+      {label:'Modificados',        value:mods,      sub:`${pct}% del total`},
+    ].map(k=>`<div class="est-kpi"><div class="est-kpi-label">${k.label}</div><div class="est-kpi-value">${k.value}</div><div class="est-kpi-sub">${k.sub}</div></div>`).join('');
+  }
+
+  function renderDistribucion(data) {
+    const cS=[0,0,0,0,0,0], cF=[0,0,0,0,0,0];
+    data.forEach(p=>{
+      if(p.nivelSugerido>=1&&p.nivelSugerido<=5) cS[p.nivelSugerido]++;
+      if(p.nivel>=1&&p.nivel<=5) cF[p.nivel]++;
+    });
+    const mx=Math.max(...cS.slice(1),...cF.slice(1),1);
+    const NM=['','Emergencia','Urgencia ND','Urgencia D','No Programable','Programable'];
+    document.getElementById('est-dist').innerHTML=[1,2,3,4,5].map(n=>`
+      <div class="dist-row">
+        <div class="dist-label-col"><span>${NIVEL_EMOJIS[n]}</span><span>N${n} — ${NM[n]}</span></div>
+        <div class="dist-bars-col">
+          <div class="dist-bar-row">
+            <div class="dist-bar-type">Sistema</div>
+            <div class="dist-bar-track"><div class="dist-bar-fill" style="width:${Math.round(cS[n]/mx*100)}%;background:${NIVEL_COLORS[n]};opacity:0.5"></div></div>
+            <div class="dist-bar-n">${cS[n]}</div>
+          </div>
+          <div class="dist-bar-row">
+            <div class="dist-bar-type">Profesional</div>
+            <div class="dist-bar-track"><div class="dist-bar-fill" style="width:${Math.round(cF[n]/mx*100)}%;background:${NIVEL_COLORS[n]}"></div></div>
+            <div class="dist-bar-n">${cF[n]}</div>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  function drawDonut(data) {
+    const svg=document.getElementById('est-donut');
+    const leg=document.getElementById('est-donut-legend');
+    if (!svg) return;
+    svg.innerHTML=''; leg.innerHTML='';
+    const cnt=[0,0,0,0,0,0];
+    data.forEach(p=>{ if(p.nivel>=1&&p.nivel<=5) cnt[p.nivel]++; });
+    const total=cnt.slice(1).reduce((a,b)=>a+b,0);
+    const NM=['','Emergencia','Urgencia ND','Urgencia D','No Programable','Programable'];
+    if (!total) {
+      const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x','80');t.setAttribute('y','86');t.setAttribute('text-anchor','middle');
+      t.setAttribute('fill','#8B949E');t.setAttribute('font-size','12');t.textContent='Sin datos';
+      svg.appendChild(t); return;
+    }
+    let angle=-Math.PI/2;
+    const cx=80,cy=80,R=68,r=44;
+    [1,2,3,4,5].forEach(n=>{
+      if (!cnt[n]) return;
+      const sw=cnt[n]/total*2*Math.PI;
+      const x1=cx+R*Math.cos(angle),y1=cy+R*Math.sin(angle);
+      const x2=cx+R*Math.cos(angle+sw),y2=cy+R*Math.sin(angle+sw);
+      const x3=cx+r*Math.cos(angle+sw),y3=cy+r*Math.sin(angle+sw);
+      const x4=cx+r*Math.cos(angle),y4=cy+r*Math.sin(angle);
+      const la=sw>Math.PI?1:0;
+      const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d',`M${x1},${y1} A${R},${R} 0 ${la},1 ${x2},${y2} L${x3},${y3} A${r},${r} 0 ${la},0 ${x4},${y4} Z`);
+      path.setAttribute('fill',NIVEL_COLORS[n]); svg.appendChild(path); angle+=sw;
+    });
+    [[22,'700','#E6EDF3',total,75],[10,'400','#8B949E','total',93]].forEach(([fs,fw,fc,txt,y])=>{
+      const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x','80');t.setAttribute('y',y);t.setAttribute('text-anchor','middle');
+      t.setAttribute('fill',fc);t.setAttribute('font-size',fs);t.setAttribute('font-weight',fw);
+      t.textContent=txt; svg.appendChild(t);
+    });
+    leg.innerHTML=[1,2,3,4,5].filter(n=>cnt[n]).map(n=>`
+      <div class="donut-item">
+        <div class="donut-dot" style="background:${NIVEL_COLORS[n]}"></div>
+        <span>${NIVEL_EMOJIS[n]} N${n} — ${NM[n]}</span>
+        <span style="color:var(--text-muted);font-family:var(--font-mono);font-size:0.74rem;margin-left:0.4rem">${cnt[n]} (${Math.round(cnt[n]/total*100)}%)</span>
+      </div>`).join('');
+  }
+
+  function renderIndices(data) {
+    const el=document.getElementById('est-indices');
+    const total=data.length;
+    if (!total) {
+      el.innerHTML='<p style="padding:0.8rem 0;color:var(--text-muted);font-size:0.85rem">Sin datos en el período seleccionado.</p>';
+      return;
+    }
+    const mods=data.filter(p=>p.override);
+    const pct=Math.round(mods.length/total*100);
+    const subieron=mods.filter(p=>p.nivel<p.nivelSugerido).length;
+    const bajaron=mods.filter(p=>p.nivel>p.nivelSugerido).length;
+    const cS=[0,0,0,0,0,0],cF=[0,0,0,0,0,0];
+    data.forEach(p=>{
+      if(p.nivelSugerido>=1&&p.nivelSugerido<=5) cS[p.nivelSugerido]++;
+      if(p.nivel>=1&&p.nivel<=5) cF[p.nivel]++;
+    });
+    const mxS=cS.indexOf(Math.max(...cS.slice(1)));
+    const mxF=cF.indexOf(Math.max(...cF.slice(1)));
+    const NM=['','Emergencia','Urgencia No Diferible','Urgencia Diferible','No Programable','Programable'];
+    el.innerHTML=`<table class="idx-table">
+      <thead><tr><th>Indicador</th><th>Valor</th><th>Detalle</th></tr></thead>
+      <tbody>
+        <tr><td>Total de clasificaciones</td><td class="idx-val idx-neutral">${total}</td><td style="color:var(--text-muted)">En el período seleccionado</td></tr>
+        <tr><td>Nivel más frecuente — sistema</td><td class="idx-val">${mxS>0?NIVEL_EMOJIS[mxS]+' N'+mxS:'—'}</td><td style="color:var(--text-muted)">${mxS>0?NM[mxS]+' — '+cS[mxS]+' casos':'—'}</td></tr>
+        <tr><td>Nivel más frecuente — profesional</td><td class="idx-val">${mxF>0?NIVEL_EMOJIS[mxF]+' N'+mxF:'—'}</td><td style="color:var(--text-muted)">${mxF>0?NM[mxF]+' — '+cF[mxF]+' casos':'—'}</td></tr>
+        <tr><td>% clasificaciones modificadas</td><td class="idx-val ${pct>10?'idx-up':''}">${pct}%</td><td style="color:var(--text-muted)">${mods.length} de ${total} modificados por el profesional</td></tr>
+        <tr><td>Nivel subido por profesional</td><td class="idx-val idx-up">${subieron}</td><td style="color:var(--text-muted)">Profesional asignó mayor urgencia que el sistema</td></tr>
+        <tr><td>Nivel bajado por profesional</td><td class="idx-val idx-down">${bajaron}</td><td style="color:var(--text-muted)">Profesional asignó menor urgencia que el sistema</td></tr>
+      </tbody>
+    </table>`;
+  }
+
+  function exportarEstadisticasPDF() {
+    if (!window.jspdf) { alert('La librería PDF no está disponible. Revisá tu conexión a internet.'); return; }
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF();
+    const datos=JSON.parse(localStorage.getItem('sut_pacientes')||'[]');
+    const [desde,hasta]=getEstFechas();
+    const per=datos.filter(p=>{ if(!p.fecha) return false; const f=new Date(p.fecha); return f>=desde&&f<=hasta; });
+    const total=per.length;
+    const mods=per.filter(p=>p.override).length;
+    const sub=per.filter(p=>p.override&&p.nivel<p.nivelSugerido).length;
+    const baj=per.filter(p=>p.override&&p.nivel>p.nivelSugerido).length;
+    const cF=[0,0,0,0,0,0];
+    per.forEach(p=>{ if(p.nivel>=1&&p.nivel<=5) cF[p.nivel]++; });
+    const NM=['','Emergencia','Urgencia No Diferible','Urgencia Diferible','No Programable','Programable'];
+    const uFiltro=document.getElementById('est-filtro-usuario')?.value||'';
+    const uNombre=uFiltro?getUsuarios().find(u=>u.id===uFiltro)?.nombre:'';
+    const periodoSub=`Período: ${desde.toLocaleDateString('es-UY')} – ${hasta.toLocaleDateString('es-UY')}${uNombre?' | Usuario: '+uNombre:''}`;
+    const startY=pdfHeader(doc,'Informe Estadístico',periodoSub);
+    doc.autoTable({startY,head:[['Indicador','Valor']],body:[
+      ['Total de clasificaciones',total],
+      ['Modificadas por profesional',`${mods} (${total?Math.round(mods/total*100):0}%)`],
+      ['Nivel subido (más urgente)',sub],
+      ['Nivel bajado (menos urgente)',baj],
+      ...[1,2,3,4,5].map(n=>[`N${n} — ${NM[n]}`,`${cF[n]} (${total?Math.round(cF[n]/total*100):0}%)`])
+    ],styles:{fontSize:9,cellPadding:3},headStyles:{fillColor:[42,109,181],textColor:255,fontStyle:'bold'},alternateRowStyles:{fillColor:[245,245,250]},
+    didDrawPage:()=>addPdfFooter(doc)});
+    const pgCount=doc.internal.getNumberOfPages();
+    for(let i=1;i<=pgCount;i++){doc.setPage(i);addPdfFooter(doc);}
+    doc.save(`sut-estadisticas-${new Date().toISOString().split('T')[0]}.pdf`);
+  }
+
+  // ─── MODAL EVA ───────────────────────────────────────────────
+  function openModalEva()  { document.getElementById('modal-eva').classList.add('active'); }
+  function closeModalEva() { document.getElementById('modal-eva').classList.remove('active'); }
+
+  // ─── ANÁLISIS AVANZADO ───────────────────────────────────────
+  function grupoEtario(edad) {
+    if (edad==null) return null;
+    if (edad<=14) return '0–14';
+    if (edad<=29) return '15–29';
+    if (edad<=59) return '30–59';
+    if (edad<=79) return '60–79';
+    return '80+';
+  }
+
+  function onAgrupChange() {
+    const agrup = document.getElementById('aa-agrup')?.value;
+    const div = document.getElementById('aa-rango-div');
+    if (div) div.style.display = agrup === 'rango' ? 'block' : 'none';
+    renderAnalisisAvanzado();
+  }
+
+  function getUsuarios() { return JSON.parse(localStorage.getItem('sut_usuarios')||'[]'); }
+  function saveUsuarios(u) { localStorage.setItem('sut_usuarios', JSON.stringify(u)); }
+  function getSesiones() { return JSON.parse(localStorage.getItem('sut_sesiones')||'[]'); }
+  function saveSesiones(s) { localStorage.setItem('sut_sesiones', JSON.stringify(s)); }
+
+  function renderAnalisisAvanzado(periodoData) {
+    const el=document.getElementById('aa-result');
+    if (!el) return;
+    const agrup=document.getElementById('aa-agrup')?.value||'hora';
+    const variable=document.getElementById('aa-variable')?.value||'total';
+
+    if (agrup === 'rango') {
+      // Custom datetime range — use rango inputs to filter ALL data
+      const dFecha=document.getElementById('aa-desde-fecha')?.value;
+      const dHora=document.getElementById('aa-desde-hora')?.value||'00:00';
+      const hFecha=document.getElementById('aa-hasta-fecha')?.value;
+      const hHora=document.getElementById('aa-hasta-hora')?.value||'23:59';
+      if (!dFecha || !hFecha) {
+        el.innerHTML='<p class="aa-empty">Seleccioná una fecha de inicio y de fin para el rango personalizado.</p>'; return;
+      }
+      const rangoDesde=new Date(`${dFecha}T${dHora}:00`);
+      const rangoHasta=new Date(`${hFecha}T${hHora}:59`);
+      const todos=JSON.parse(localStorage.getItem('sut_pacientes')||'[]');
+      periodoData=todos.filter(p=>{ if(!p.fecha) return false; const f=new Date(p.fecha); return f>=rangoDesde&&f<=rangoHasta; });
+    } else if (!periodoData) {
+      const datos=JSON.parse(localStorage.getItem('sut_pacientes')||'[]');
+      const [desde,hasta]=getEstFechas();
+      periodoData=datos.filter(p=>{ if(!p.fecha) return false; const f=new Date(p.fecha); return f>=desde&&f<=hasta; });
+    }
+
+    if (!periodoData.length) { el.innerHTML='<p class="aa-empty">Sin datos en el período seleccionado.</p>'; return; }
+
+    const FRANJAS=['00-04','04-08','08-12','12-16','16-20','20-24'];
+    const DIASEM=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    const GRUPOS_ETARIOS=['0–14','15–29','30–59','60–79','80+'];
+
+    // Build group keys
+    function getKey(p) {
+      if (agrup==='usuario') return p.usuarioNombre||'Sin usuario';
+      if (!p.fecha) return null;
+      const d=new Date(p.fecha);
+      if (agrup==='hora') { const h=d.getHours(); return FRANJAS[Math.floor(h/4)]; }
+      if (agrup==='diasemana') return DIASEM[d.getDay()];
+      if (agrup==='fecha'||agrup==='rango') return d.toLocaleDateString('es-UY',{day:'2-digit',month:'2-digit',year:'numeric'});
+      return null;
+    }
+
+    // Determine ordered keys
+    let orderedKeys;
+    if (agrup==='hora') orderedKeys=[...FRANJAS];
+    else if (agrup==='diasemana') orderedKeys=[...DIASEM];
+    else {
+      const ks=new Set(periodoData.map(p=>getKey(p)).filter(Boolean));
+      orderedKeys=[...ks].sort();
+    }
+
+    // Determine columns (series headers)
+    let colHeaders, getColIdx;
+    if (variable==='total') {
+      colHeaders=['Total']; getColIdx=()=>0;
+    } else if (variable==='nivel') {
+      colHeaders=[1,2,3,4,5].map(n=>`${NIVEL_EMOJIS[n]} N${n}`);
+      getColIdx=p=>p.nivel>=1&&p.nivel<=5?p.nivel-1:-1;
+    } else {
+      colHeaders=GRUPOS_ETARIOS;
+      getColIdx=p=>{ const g=grupoEtario(p.edad); return g?GRUPOS_ETARIOS.indexOf(g):-1; };
+    }
+
+    // Build matrix rows[key][col]
+    const matrix={};
+    orderedKeys.forEach(k=>{ matrix[k]=new Array(colHeaders.length).fill(0); });
+    periodoData.forEach(p=>{
+      const k=getKey(p); if(!k||!matrix[k]) return;
+      const ci=getColIdx(p); if(ci<0) return;
+      matrix[k][ci]++;
+    });
+
+    // Filter keys that have data
+    const activeKeys=orderedKeys.filter(k=>matrix[k]&&matrix[k].some(v=>v>0));
+    if (!activeKeys.length) { el.innerHTML='<p class="aa-empty">Sin datos para la agrupación seleccionada.</p>'; return; }
+
+    // Table HTML
+    const thCols=colHeaders.map(h=>`<th>${h}</th>`).join('');
+    const totalCol=variable==='total'?'':'<th>Total</th>';
+    const rows=activeKeys.map(k=>{
+      const vals=matrix[k];
+      const rowTotal=vals.reduce((a,b)=>a+b,0);
+      const tds=vals.map(v=>`<td>${v}</td>`).join('');
+      const totalTd=variable==='total'?'':`<td style="font-weight:600;color:var(--text)">${rowTotal}</td>`;
+      return `<tr><td style="font-weight:500">${k}</td>${tds}${totalTd}</tr>`;
+    }).join('');
+
+    // Total row
+    const colTotals=colHeaders.map((_,ci)=>activeKeys.reduce((s,k)=>s+matrix[k][ci],0));
+    const grandTotal=colTotals.reduce((a,b)=>a+b,0);
+    const totalTds=colTotals.map(v=>`<td style="font-weight:600;color:var(--text)">${v}</td>`).join('');
+    const grandTd=variable==='total'?'':`<td style="font-weight:700;color:var(--azul)">${grandTotal}</td>`;
+
+    // SVG bar chart
+    const svgHtml=drawBarSVG(activeKeys, colHeaders, matrix, variable);
+
+    // Prepare PDF export data
+    const pdfHeaders=['Grupo',...colHeaders,...(variable==='total'?[]:['Total'])];
+    const pdfRows=activeKeys.map(k=>{
+      const vals=matrix[k];
+      const rowTotal=vals.reduce((a,b)=>a+b,0);
+      return [k,...vals.map(String),...(variable==='total'?[]:[String(rowTotal)])];
+    });
+    pdfRows.push(['TOTAL',...colTotals.map(String),...(variable==='total'?[]:[String(grandTotal)])]);
+
+    const agrupLabel={hora:'Franja horaria',diasemana:'Día de semana',fecha:'Fecha',rango:'Rango de fechas',usuario:'Por usuario'}[agrup]||agrup;
+    const varLabel={total:'Total de consultas',nivel:'Por nivel de color',etario:'Por grupo etario'}[variable];
+    const titulo=`Análisis Avanzado — ${agrupLabel} / ${varLabel}`;
+    let periodoStr;
+    if (agrup==='rango') {
+      const dF=document.getElementById('aa-desde-fecha')?.value;
+      const dH=document.getElementById('aa-desde-hora')?.value||'00:00';
+      const hF=document.getElementById('aa-hasta-fecha')?.value;
+      const hHr=document.getElementById('aa-hasta-hora')?.value||'23:59';
+      periodoStr=`${dF?new Date(dF+'T'+dH+':00').toLocaleString('es-UY',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—'} – ${hF?new Date(hF+'T'+hHr+':59').toLocaleString('es-UY',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—'}`;
+    } else {
+      const [desde,hasta]=getEstFechas();
+      periodoStr=`${desde.toLocaleDateString('es-UY')} – ${hasta.toLocaleDateString('es-UY')}`;
+    }
+
+    el.innerHTML=`
+      <table class="aa-tabla">
+        <thead><tr><th>Grupo</th>${thCols}${totalCol}</tr></thead>
+        <tbody>${rows}
+          <tr style="border-top:2px solid var(--border)"><td style="font-weight:700;color:var(--azul)">TOTAL</td>${totalTds}${grandTd}</tr>
+        </tbody>
+      </table>
+      <div class="aa-bar-wrap">${svgHtml}</div>
+      <div class="aa-export-btn">
+        <button class="btn-action" onclick='exportarAnalisisPDF(${JSON.stringify(titulo)},${JSON.stringify(pdfHeaders)},${JSON.stringify(pdfRows)},${JSON.stringify(periodoStr)})'>⬇ Exportar PDF</button>
+      </div>`;
+  }
+
+  function drawBarSVG(keys, colHeaders, matrix, variable) {
+    const colors=variable==='nivel'
+      ? ['#D62828','#E07A15','#E8C13A','#2E9E5B','#2A6DB5']
+      : ['#2A6DB5','#2E9E5B','#E8C13A','#E07A15','#D62828','#7B61FF'];
+    const barW=variable==='total'?28:Math.max(12, Math.floor(140/colHeaders.length));
+    const groupW=colHeaders.length*barW+(colHeaders.length>1?4:0)+12;
+    const W=Math.max(320, keys.length*groupW+60);
+    const H=180;
+    const padL=36, padB=44, padT=12;
+    const chartH=H-padT-padB;
+
+    const maxVal=Math.max(1,...keys.map(k=>matrix[k].reduce((a,b)=>a+b,0)));
+
+    let rects='', labels='', yaxis='';
+    const yTicks=4;
+    for (let t=0;t<=yTicks;t++) {
+      const v=Math.round(maxVal/yTicks*t);
+      const y=H-padB-Math.round(chartH*t/yTicks);
+      yaxis+=`<line x1="${padL}" x2="${W}" y1="${y}" y2="${y}" stroke="currentColor" stroke-width="1" opacity="0.2"/>`;
+      yaxis+=`<text x="${padL-4}" y="${y+4}" text-anchor="end" font-size="9" fill="currentColor" opacity="0.5">${v}</text>`;
+    }
+
+    keys.forEach((k,gi)=>{
+      const gx=padL+gi*groupW+6;
+      colHeaders.forEach((ch,ci)=>{
+        const v=matrix[k][ci]||0;
+        const bh=Math.round(v/maxVal*chartH)||0;
+        const bx=gx+ci*(barW+1);
+        const by=H-padB-bh;
+        const fill=colors[ci%colors.length];
+        rects+=`<rect x="${bx}" y="${by}" width="${barW-2}" height="${bh}" fill="${fill}" rx="2" opacity="0.85"/>`;
+        if (v>0) rects+=`<text x="${bx+(barW-2)/2}" y="${by-3}" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.8">${v}</text>`;
+      });
+      const lx=gx+(colHeaders.length*(barW+1))/2;
+      const lbl=k.length>8?k.slice(0,8)+'…':k;
+      labels+=`<text x="${lx}" y="${H-padB+14}" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.55">${lbl}</text>`;
+    });
+
+    // Legend
+    let legend='';
+    if (colHeaders.length>1) {
+      colHeaders.forEach((ch,ci)=>{
+        const lx=padL+ci*90;
+        legend+=`<rect x="${lx}" y="${H-10}" width="9" height="9" fill="${colors[ci%colors.length]}" rx="1"/>`;
+        legend+=`<text x="${lx+12}" y="${H-2}" font-size="8" fill="currentColor" opacity="0.55">${ch.replace(/[🔴🟠🟡🟢🔵]/gu,'').trim()}</text>`;
+      });
+    }
+    const svgH=colHeaders.length>1?H+16:H;
+    return `<svg width="${W}" height="${svgH}" style="min-width:${W}px;display:block;font-family:system-ui">${yaxis}${rects}${labels}${legend}</svg>`;
+  }
+
+  function exportarAnalisisPDF(titulo, headers, rows, periodoStr) {
+    if (!window.jspdf) { alert('La librería PDF no está disponible. Revisá tu conexión a internet.'); return; }
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF();
+    const startY=pdfHeader(doc, titulo, 'Período: '+periodoStr);
+    doc.autoTable({
+      startY,
+      head:[headers],
+      body:rows,
+      styles:{fontSize:8,cellPadding:2.5},
+      headStyles:{fillColor:[42,109,181],textColor:255,fontStyle:'bold'},
+      alternateRowStyles:{fillColor:[245,245,250]},
+      didParseCell(data){ if(data.row.index===rows.length-1){ data.cell.styles.fontStyle='bold'; } }
+    });
+    const fname='sut-analisis-'+titulo.toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,40)+'-'+new Date().toISOString().split('T')[0]+'.pdf';
+    doc.save(fname);
+  }
+
+  // ─── SISTEMA DE USUARIOS ────────────────────────────────────
+  let usuarioActivo = null;
+  let sesionActiva  = null;
+  let pinUserId     = null;
+  let pinEsReg      = false;
+
+  function colorPorRol(r) { return {medico:'#2A6DB5',enfermeria:'#2E9E5B',tecnico:'#E07A15'}[r]||'#8B949E'; }
+  function labelRol(r)    { return {medico:'Médico/a',enfermeria:'Enfermería',tecnico:'Técnico/a'}[r]||r||'—'; }
+  function inicialesNombre(n) { return (n||'').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase()||'?'; }
+
+  function populateUserFilter() {
+    const sel=document.getElementById('est-filtro-usuario'); if(!sel) return;
+    const cur=sel.value;
+    sel.innerHTML='<option value="">👤 Todos los usuarios</option>'+
+      getUsuarios().filter(u=>u.activo!==false).map(u=>`<option value="${u.id}"${cur===u.id?' selected':''}>${u.nombre} — ${labelRol(u.rol)}</option>`).join('');
+  }
+
+  function mostrarUsersScreen() {
+    document.getElementById('screen-welcome').style.display='none';
+    document.getElementById('screen-users').classList.add('active');
+    renderListaUsuarios();
+  }
+
+  function renderListaUsuarios() {
+    const list=document.getElementById('users-list');
+    const usuarios=getUsuarios().filter(u=>u.activo!==false);
+    list.innerHTML=usuarios.length
+      ? usuarios.map(u=>`
+          <button class="user-btn" onclick="seleccionarUsuario('${u.id}')">
+            <div class="user-avatar" style="background:${colorPorRol(u.rol)}">${inicialesNombre(u.nombre)}</div>
+            <div style="flex:1">
+              <div class="user-nombre">${u.nombre}</div>
+              <div class="user-rol-tag">${labelRol(u.rol)}</div>
+            </div>
+            <span style="color:var(--text-muted);font-size:0.78rem">→</span>
+          </button>`).join('')
+      : '<p style="text-align:center;color:var(--text-muted);font-size:0.83rem;padding:1rem 0">No hay usuarios.<br>Agregá el primero.</p>';
+  }
+
+  function iniciarAgregarUsuario() {
+    document.getElementById('add-user-panel').classList.add('visible');
+    document.getElementById('new-u-nombre').focus();
+  }
+  function cancelarAgregarUsuario() {
+    document.getElementById('add-user-panel').classList.remove('visible');
+    document.getElementById('new-u-nombre').value='';
+  }
+  function crearUsuario() {
+    const nombre=document.getElementById('new-u-nombre').value.trim();
+    const rol=document.getElementById('new-u-rol').value;
+    if (!nombre) { document.getElementById('new-u-nombre').focus(); return; }
+    const usuarios=getUsuarios();
+    usuarios.push({ id:Date.now().toString(), nombre, rol, cedula:null, activo:true, creadoEn:new Date().toISOString() });
+    saveUsuarios(usuarios);
+    cancelarAgregarUsuario();
+    renderListaUsuarios();
+  }
+
+  function seleccionarUsuario(id) {
+    const user=getUsuarios().find(u=>u.id===id);
+    if (!user||user.activo===false) return;
+    pinUserId=id;
+    pinEsReg=!user.cedula;
+    document.getElementById('pin-titulo').textContent = pinEsReg ? `Bienvenido/a, ${user.nombre.split(' ')[0]}` : `Hola, ${user.nombre.split(' ')[0]}`;
+    document.getElementById('pin-sub').textContent = pinEsReg
+      ? 'Primera vez: ingresá tu cédula en el primer campo y confirmala en el segundo para crear tu acceso personal.'
+      : 'Ingresá tu cédula para continuar';
+    document.getElementById('pin-input').value='';
+    document.getElementById('pin-confirm').value='';
+    document.getElementById('pin-confirm-wrap').style.display = pinEsReg ? 'block' : 'none';
+    document.getElementById('pin-error').textContent='';
+    document.getElementById('pin-success').style.display='none';
+    document.getElementById('pin-btns-wrap').style.display='flex';
+    document.getElementById('modal-pin').classList.add('active');
+    setTimeout(()=>document.getElementById('pin-input').focus(), 80);
+  }
+
+  function cancelarPin() {
+    document.getElementById('modal-pin').classList.remove('active');
+    pinUserId=null;
+  }
+
+  function verificarPin() {
+    const pin=document.getElementById('pin-input').value.replace(/\D/g,'');
+    const err=document.getElementById('pin-error');
+    const successEl=document.getElementById('pin-success');
+
+    function mostrarError(msg) {
+      err.textContent=msg;
+      successEl.style.display='none';
+      const inp=document.getElementById('pin-input');
+      inp.classList.add('error');
+      setTimeout(()=>inp.classList.remove('error'),400);
+      // Never close the modal on error — modal stays open
+    }
+
+    if (!pin||pin.length<6) {
+      mostrarError('La cédula debe tener al menos 6 dígitos');
+      return;
+    }
+
+    const usuarios=getUsuarios();
+    const user=usuarios.find(u=>u.id===pinUserId);
+    if (!user) return; // shouldn't happen
+
+    if (pinEsReg) {
+      const pinConfirm=document.getElementById('pin-confirm').value.replace(/\D/g,'');
+      if (!pinConfirm) { mostrarError('Confirmá tu cédula en el segundo campo'); return; }
+      if (pin!==pinConfirm) { err.textContent='Las cédulas no coinciden — revisá ambos campos'; successEl.style.display='none'; return; }
+      user.cedula=btoa(pin);
+      saveUsuarios(usuarios);
+      // Success: show feedback then enter
+      err.textContent='';
+      successEl.textContent='✓ Cédula registrada correctamente';
+      successEl.style.display='block';
+      document.getElementById('pin-btns-wrap').style.display='none';
+      setTimeout(()=>{
+        document.getElementById('modal-pin').classList.remove('active');
+        iniciarSesionUsuario(user);
+      }, 1100);
+    } else {
+      let storedNorm=user.cedula||'';
+      try { storedNorm=btoa(atob(storedNorm).replace(/\D/g,'')); } catch(e) {}
+      if (btoa(pin)!==storedNorm) {
+        document.getElementById('pin-input').value='';
+        mostrarError('Cédula incorrecta — intentá de nuevo');
+        return;
+      }
+      if (user.cedula!==storedNorm) { user.cedula=storedNorm; saveUsuarios(usuarios); }
+      // Success: show feedback then enter
+      err.textContent='';
+      successEl.textContent='✓ Bienvenido/a, '+user.nombre.split(' ')[0];
+      successEl.style.display='block';
+      document.getElementById('pin-btns-wrap').style.display='none';
+      setTimeout(()=>{
+        document.getElementById('modal-pin').classList.remove('active');
+        iniciarSesionUsuario(user);
+      }, 900);
+    }
+  }
+
+  function iniciarSesionUsuario(user) {
+    usuarioActivo=user;
+    const sesion={ id:Date.now().toString(), usuarioId:user.id, usuarioNombre:user.nombre, usuarioRol:user.rol, apertura:new Date().toISOString(), bloqueo:null, duracionMin:null };
+    sesionActiva=sesion;
+    const ss=getSesiones(); ss.push(sesion); saveSesiones(ss);
+    // Always transition to the app first so all modals are visible
+    _entrarApp(user);
+    // If no institutional config yet, prompt for it on top of the app
+    if (!localStorage.getItem('sut_config')) {
+      document.getElementById('modal-config').classList.add('active');
+    }
+  }
+
+  function bloquear() {
+    if (sesionActiva) {
+      const ss=getSesiones();
+      const s=ss.find(x=>x.id===sesionActiva.id);
+      if (s) { s.bloqueo=new Date().toISOString(); s.duracionMin=Math.max(0,Math.round((Date.now()-new Date(s.apertura).getTime())/60000)); saveSesiones(ss); }
+      sesionActiva=null;
+    }
+    descargarRespaldo();
+    usuarioActivo=null;
+    const badge=document.getElementById('header-user-badge');
+    if (badge) badge.style.display='none';
+    document.getElementById('screen-app').classList.remove('active');
+    document.getElementById('screen-users').classList.add('active');
+    renderListaUsuarios();
+  }
+
+  function descargarRespaldo() {
+    try {
+      const backup = {
+        fecha: new Date().toISOString(),
+        pacientes: JSON.parse(localStorage.getItem('sut_pacientes')||'[]'),
+        usuarios: JSON.parse(localStorage.getItem('sut_usuarios')||'[]'),
+        sesiones: JSON.parse(localStorage.getItem('sut_sesiones')||'[]'),
+        config: JSON.parse(localStorage.getItem('sut_config')||'{}'),
+      };
+      const blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'sut-respaldo-' + new Date().toISOString().split('T')[0] + '.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch(e) { /* user may have blocked downloads — silent fail */ }
+  }
+
+  // ─── TOGGLE CONTRASEÑA ──────────────────────────────────────
+  function togglePwd(id, btn) {
+    const inp=document.getElementById(id);
+    if (!inp) return;
+    const show=inp.type==='password';
+    inp.type=show?'text':'password';
+    btn.textContent=show?'🙈':'👁';
+  }
+
+  // ─── CONFIG ADMIN ────────────────────────────────────────────
+  function abrirConfigAdmin() {
+    document.getElementById('adm-pass-err').textContent='';
+    document.getElementById('adm-pass-input').value='';
+    document.getElementById('adm-pass-input').type='password';
+    document.querySelector('#modal-admin-pass .btn-eye').textContent='👁';
+    document.getElementById('modal-admin-pass').classList.add('active');
+    setTimeout(()=>document.getElementById('adm-pass-input').focus(), 80);
+  }
+  function confirmarAdminPass() {
+    const val=document.getElementById('adm-pass-input').value;
+    if (val!=='suttriage0') {
+      document.getElementById('adm-pass-err').textContent='Contraseña incorrecta';
+      document.getElementById('adm-pass-input').value='';
+      document.getElementById('adm-pass-input').classList.add('error');
+      setTimeout(()=>document.getElementById('adm-pass-input').classList.remove('error'),400);
+      return;
+    }
+    document.getElementById('modal-admin-pass').classList.remove('active');
+    document.getElementById('modal-config-admin').classList.add('active');
+    showCfgTab('usuarios');
+  }
+  function cancelarAdminPass() { document.getElementById('modal-admin-pass').classList.remove('active'); }
+  function cerrarConfigAdmin() { document.getElementById('modal-config-admin').classList.remove('active'); }
+
+  function showCfgTab(tab) {
+    document.querySelectorAll('.cfg-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+    const body=document.getElementById('cfg-adm-body');
+    if (tab==='usuarios')      renderCfgUsuarios(body);
+    if (tab==='institucional') renderCfgInstitucional(body);
+    if (tab==='sesiones')      renderCfgSesiones(body);
+    if (tab==='auditoria')     renderCfgAuditoria(body);
+  }
+
+  function renderCfgUsuarios(body) {
+    const usuarios=getUsuarios();
+    const lista=usuarios.length
+      ? usuarios.map(u=>`
+          <div class="cfg-usr-row">
+            <div class="user-avatar" style="background:${colorPorRol(u.rol)}">${inicialesNombre(u.nombre)}</div>
+            <div class="cfg-usr-info">
+              <div class="cfg-usr-nombre">${u.nombre} <span class="${u.activo!==false?'tag-activo':'tag-inactivo'}">${u.activo!==false?'Activo':'Inactivo'}</span></div>
+              <div class="cfg-usr-meta">${labelRol(u.rol)} · Cédula: ${u.cedula?'••••••'+u.cedula.slice(-3):'(no configurada)'}</div>
+            </div>
+            <button class="btn-sm" onclick="toggleUsuario('${u.id}')">${u.activo!==false?'Desactivar':'Activar'}</button>
+          </div>`).join('')
+      : '<p style="color:var(--text-muted);font-size:0.85rem">No hay usuarios registrados.</p>';
+    body.innerHTML=`
+      <div class="card">
+        <h3>Usuarios registrados</h3>
+        ${lista}
+        <div class="cfg-add-grid">
+          <div class="vital-field"><label>Nombre completo</label><input type="text" id="cfg-new-nombre" placeholder="Ej: María García" /></div>
+          <div class="vital-field"><label>Rol</label>
+            <select id="cfg-new-rol" class="aa-select" style="width:100%">
+              <option value="medico">Médico/a</option>
+              <option value="enfermeria">Enfermería</option>
+              <option value="tecnico">Técnico/a</option>
+            </select>
+          </div>
+          <div class="vital-field"><label>Cédula (contraseña)</label><input type="password" id="cfg-new-cedula" placeholder="Cédula" maxlength="12" /></div>
+          <button class="btn-next" onclick="crearUsuarioCfg()" style="height:fit-content;align-self:end">+ Agregar</button>
+        </div>
+      </div>`;
+  }
+
+  function toggleUsuario(id) {
+    const usuarios=getUsuarios();
+    const u=usuarios.find(x=>x.id===id);
+    if (u) { u.activo=u.activo===false?true:false; saveUsuarios(usuarios); }
+    showCfgTab('usuarios');
+  }
+
+  function crearUsuarioCfg() {
+    const nombre=document.getElementById('cfg-new-nombre').value.trim();
+    const rol=document.getElementById('cfg-new-rol').value;
+    const ced=document.getElementById('cfg-new-cedula').value.replace(/\D/g,'').trim();
+    if (!nombre) { document.getElementById('cfg-new-nombre').focus(); return; }
+    const usuarios=getUsuarios();
+    usuarios.push({ id:Date.now().toString(), nombre, rol, cedula:ced?btoa(ced):null, activo:true, creadoEn:new Date().toISOString() });
+    saveUsuarios(usuarios);
+    showCfgTab('usuarios');
+    populateUserFilter();
+    renderListaUsuarios();
+  }
+
+  function renderCfgInstitucional(body) {
+    const cfg=getCentroInfo()||{};
+    body.innerHTML=`
+      <div class="card">
+        <h3>Datos del centro asistencial</h3>
+        <div class="config-form">
+          <div class="config-field"><label>Nombre del centro</label><input type="text" id="cfg2-centro" value="${cfg.centro||''}" placeholder="Ej: Hospital de Artigas" /></div>
+          <div class="config-field"><label>Ciudad</label><input type="text" id="cfg2-ciudad" value="${cfg.ciudad||''}" placeholder="Ej: Artigas" /></div>
+          <div class="config-field"><label>Departamento</label><input type="text" id="cfg2-depto" value="${cfg.depto||''}" placeholder="Ej: Artigas" /></div>
+        </div>
+        <button class="btn-config-save" onclick="guardarConfigAdmin()">Guardar</button>
+      </div>`;
+  }
+
+  function guardarConfigAdmin() {
+    const centro=document.getElementById('cfg2-centro').value.trim();
+    const ciudad=document.getElementById('cfg2-ciudad').value.trim();
+    const depto=document.getElementById('cfg2-depto').value.trim();
+    localStorage.setItem('sut_config', JSON.stringify({centro,ciudad,depto}));
+    // also sync the original form fields
+    ['cfg-centro','cfg-ciudad','cfg-depto'].forEach((id,i)=>{
+      const el=document.getElementById(id);
+      if (el) el.value=[centro,ciudad,depto][i];
+    });
+    cargarConfig();
+    showCfgTab('institucional');
+  }
+
+  function renderCfgSesiones(body) {
+    const [desde,hasta]=getEstFechas();
+    const ss=getSesiones();
+    const fmtDT=d=>d?new Date(d).toLocaleString('es-UY',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}):'Activa';
+    const rows=ss.map(s=>`<tr>
+      <td style="font-weight:500">${s.usuarioNombre||'—'}</td>
+      <td style="color:var(--text-muted);font-size:0.72rem">${labelRol(s.usuarioRol)}</td>
+      <td style="font-family:var(--font-mono);font-size:0.74rem">${fmtDT(s.apertura)}</td>
+      <td style="font-family:var(--font-mono);font-size:0.74rem">${fmtDT(s.bloqueo)}</td>
+      <td>${s.duracionMin!=null?s.duracionMin+' min':'—'}</td>
+    </tr>`).join('');
+    body.innerHTML=`
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.9rem">
+          <h3 style="margin:0">${ss.length} sesiones registradas</h3>
+          <button class="btn-action" onclick="exportarSesionesAdminPDF()">⬇ Exportar PDF</button>
+        </div>
+        ${ss.length?`<div class="pac-table-wrap"><table class="ses-table"><thead><tr><th>Usuario</th><th>Rol</th><th>Apertura</th><th>Bloqueo</th><th>Duración</th></tr></thead><tbody>${rows}</tbody></table></div>`:'<p class="aa-empty">Sin sesiones registradas.</p>'}
+      </div>`;
+  }
+
+  function renderCfgAuditoria(body) {
+    const todos=JSON.parse(localStorage.getItem('sut_pacientes')||'[]');
+    const NM=['','Emergencia','Urgencia ND','Urgencia D','No Prog.','Programable'];
+    const fmtDT=d=>d?new Date(d).toLocaleString('es-UY',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+    const rows=todos.slice().reverse().map(p=>`<tr>
+      <td style="font-size:0.72rem;font-family:var(--font-mono)">${fmtDT(p.fecha)}</td>
+      <td style="font-weight:500">${p.usuarioNombre||'—'}</td>
+      <td>${p.id||'—'}</td>
+      <td style="font-size:0.74rem;color:var(--text-muted)">${MOTIVOS_MAP[p.motivo]||p.motivo||'—'}</td>
+      <td><span class="nivel-badge nb-${p.nivelSugerido||0}">${NIVEL_EMOJIS[p.nivelSugerido||0]||''} N${p.nivelSugerido||'—'}</span></td>
+      <td><span class="nivel-badge nb-${p.nivel||0}">${NIVEL_EMOJIS[p.nivel||0]||''} N${p.nivel||'—'}</span></td>
+      <td>${p.override?'<span class="aud-mod">✏ modificado</span>':'—'}</td>
+    </tr>`).join('');
+    body.innerHTML=`
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.9rem">
+          <h3 style="margin:0">${todos.length} clasificaciones</h3>
+          <button class="btn-action" onclick="exportarAuditoriaPDF()">⬇ Exportar PDF</button>
+        </div>
+        ${todos.length?`<div class="pac-table-wrap"><table class="ses-table"><thead><tr><th>Fecha/Hora</th><th>Usuario</th><th>Código</th><th>Motivo</th><th>Sug.</th><th>Final</th><th>Estado</th></tr></thead><tbody>${rows}</tbody></table></div>`:'<p class="aa-empty">Sin clasificaciones.</p>'}
+      </div>`;
+  }
+
+  // ─── SESIONES EN ESTADÍSTICAS ────────────────────────────────
+  function renderSesionesPeriodo() {
+    const el=document.getElementById('est-sesiones'); if(!el) return;
+    const [desde,hasta]=getEstFechas();
+    const ss=getSesiones().filter(s=>{ if(!s.apertura) return false; const f=new Date(s.apertura); return f>=desde&&f<=hasta; });
+    const fmtDT=d=>d?new Date(d).toLocaleString('es-UY',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'Activa';
+    if (!ss.length) { el.innerHTML='<p class="aa-empty">Sin sesiones en el período seleccionado.</p>'; return; }
+    const rows=ss.map(s=>`<tr>
+      <td style="font-weight:500">${s.usuarioNombre||'—'}</td>
+      <td style="color:var(--text-muted);font-size:0.72rem">${labelRol(s.usuarioRol)}</td>
+      <td style="font-family:var(--font-mono);font-size:0.74rem">${fmtDT(s.apertura)}</td>
+      <td style="font-family:var(--font-mono);font-size:0.74rem">${fmtDT(s.bloqueo)}</td>
+      <td>${s.duracionMin!=null?s.duracionMin+' min':'—'}</td>
+    </tr>`).join('');
+    el.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.7rem">
+        <span style="font-size:0.8rem;color:var(--text-muted)">${ss.length} sesión${ss.length!==1?'es':''} en el período</span>
+        <button class="btn-action" onclick="exportarSesionesStatsPDF()">⬇ Exportar PDF</button>
+      </div>
+      <div class="pac-table-wrap"><table class="ses-table">
+        <thead><tr><th>Usuario</th><th>Rol</th><th>Apertura</th><th>Bloqueo</th><th>Duración</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>`;
+  }
+
+  function exportarSesionesStatsPDF() {
+    if (!window.jspdf) { alert('PDF no disponible.'); return; }
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF();
+    const [desde,hasta]=getEstFechas();
+    const ss=getSesiones().filter(s=>{ if(!s.apertura) return false; const f=new Date(s.apertura); return f>=desde&&f<=hasta; });
+    const startY=pdfHeader(doc,'Registro de Sesiones',`Período: ${desde.toLocaleDateString('es-UY')} – ${hasta.toLocaleDateString('es-UY')}`);
+    const fmtDT=d=>d?new Date(d).toLocaleString('es-UY',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'Activa';
+    doc.autoTable({startY,head:[['Usuario','Rol','Apertura','Bloqueo','Duración']],body:ss.map(s=>[s.usuarioNombre||'—',labelRol(s.usuarioRol),fmtDT(s.apertura),fmtDT(s.bloqueo),s.duracionMin!=null?s.duracionMin+' min':'—']),styles:{fontSize:8,cellPadding:2.5},headStyles:{fillColor:[42,109,181],textColor:255,fontStyle:'bold'},alternateRowStyles:{fillColor:[245,245,250]}});
+    doc.save(`sut-sesiones-${new Date().toISOString().split('T')[0]}.pdf`);
+  }
+
+  function exportarSesionesAdminPDF() {
+    if (!window.jspdf) { alert('PDF no disponible.'); return; }
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF();
+    const ss=getSesiones();
+    const startY=pdfHeader(doc,'Historial de Sesiones',`Total: ${ss.length} sesiones`);
+    const fmtDT=d=>d?new Date(d).toLocaleString('es-UY',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'Activa';
+    doc.autoTable({startY,head:[['Usuario','Rol','Apertura','Bloqueo','Duración']],body:ss.map(s=>[s.usuarioNombre||'—',labelRol(s.usuarioRol),fmtDT(s.apertura),fmtDT(s.bloqueo),s.duracionMin!=null?s.duracionMin+' min':'—']),styles:{fontSize:8,cellPadding:2.5},headStyles:{fillColor:[42,109,181],textColor:255,fontStyle:'bold'},alternateRowStyles:{fillColor:[245,245,250]}});
+    doc.save(`sut-sesiones-historial-${new Date().toISOString().split('T')[0]}.pdf`);
+  }
+
+  function exportarAuditoriaPDF() {
+    if (!window.jspdf) { alert('PDF no disponible.'); return; }
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:'landscape'});
+    const todos=JSON.parse(localStorage.getItem('sut_pacientes')||'[]');
+    const startY=pdfHeader(doc,'Auditoría — Clasificaciones',`Total: ${todos.length} registros`);
+    const fmtDT=d=>d?new Date(d).toLocaleString('es-UY',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+    const NM=['','Emergencia','Urgencia No Diferible','Urgencia Diferible','No Programable','Programable'];
+    doc.autoTable({startY,head:[['Fecha/Hora','Usuario','Código','Motivo','Sug.','Final','Modificado']],body:todos.map(p=>[fmtDT(p.fecha),p.usuarioNombre||'—',p.id||'—',MOTIVOS_MAP[p.motivo]||p.motivo||'—',`N${p.nivelSugerido||'—'}`,`N${p.nivel||'—'}`,p.override?'Sí':'No']),styles:{fontSize:7.5,cellPadding:2},headStyles:{fillColor:[42,109,181],textColor:255,fontStyle:'bold'},alternateRowStyles:{fillColor:[245,245,250]}});
+    doc.save(`sut-auditoria-${new Date().toISOString().split('T')[0]}.pdf`);
+  }
+
+  // ─── ANÁLISIS POR TURNOS ─────────────────────────────────────
+  let turnosResumen = null;
+  let turnosDesde   = null;
+  let turnosHasta   = null;
+
+  const TURNOS_DEF = {
+    manana:    { emoji:'🌅', label:'Mañana',     horaStr:'08:00–12:00', h1:8,  h2:12 },
+    tarde:     { emoji:'☀️', label:'Tarde',      horaStr:'12:00–16:00', h1:12, h2:16 },
+    vespertino:{ emoji:'🌆', label:'Vespertino', horaStr:'16:00–20:00', h1:16, h2:20 },
+    noche:     { emoji:'🌙', label:'Noche',      horaStr:'20:00–00:00', h1:20, h2:24 },
+    madrugada: { emoji:'🌑', label:'Madrugada',  horaStr:'00:00–08:00', h1:0,  h2:8  },
+  };
+
+  function _filtrarPorTurno(data, t) {
+    return data.filter(p => {
+      if (!p.fecha) return false;
+      const d = new Date(p.fecha);
+      const mins = d.getHours() * 60 + d.getMinutes();
+      const m1 = (t.h1 || 0) * 60 + (t.minIni || 0);
+      const m2 = t.h2 === 24 ? 1440 : (t.h2 || 0) * 60 + (t.minFin || 0);
+      return (m1 < m2) ? (mins >= m1 && mins < m2) : (mins >= m1 || mins < m2);
+    });
+  }
+
+  function _statsTurno(data) {
+    const total = data.length;
+    const cnt = [0,0,0,0,0,0];
+    data.forEach(p => { if (p.nivel >= 1 && p.nivel <= 5) cnt[p.nivel]++; });
+    const eds = data.filter(p => p.edad != null).map(p => p.edad);
+    const edadProm = eds.length ? Math.round(eds.reduce((a,b)=>a+b,0)/eds.length) : null;
+    const mods = data.filter(p => p.override).length;
+    return { total, cnt, edadProm, mods };
+  }
+
+  function generarAnalisisTurnos() {
+    turnosDesde = document.getElementById('turnos-desde').value;
+    turnosHasta = document.getElementById('turnos-hasta').value;
+    const el = document.getElementById('turnos-result');
+
+    if (!turnosDesde || !turnosHasta) {
+      el.innerHTML = '<p class="aa-empty">Seleccioná una fecha de inicio y una de fin.</p>';
+      return;
+    }
+    const desde = new Date(turnosDesde+'T00:00:00');
+    const hasta  = new Date(turnosHasta+'T23:59:59');
+    if (desde > hasta) { el.innerHTML = '<p class="aa-empty">La fecha de inicio debe ser anterior a la de fin.</p>'; return; }
+
+    const checked = [...document.querySelectorAll('#turnos-card .turno-check input:checked')].map(c => c.value);
+    const customRows = [...document.querySelectorAll('#turnos-custom-list .turno-custom-row')];
+    const customTurnos = customRows.map(row => {
+      const inputs = row.querySelectorAll('input');
+      const nombre = inputs[0].value.trim() || 'Personalizado';
+      const horaIni = inputs[1].value || '00:00';
+      const horaFin = inputs[2].value || '00:00';
+      const [h1, minIni] = horaIni.split(':').map(Number);
+      const [h2, minFin] = horaFin.split(':').map(Number);
+      return { label: nombre, emoji: '🕐', horaStr: `${horaIni}–${horaFin}`, h1, h2, minIni, minFin, isCustom: true };
+    });
+    if (!checked.length && !customTurnos.length) { el.innerHTML = '<p class="aa-empty">Seleccioná al menos un turno.</p>'; return; }
+
+    const datos = JSON.parse(localStorage.getItem('sut_pacientes')||'[]');
+    const enRango = datos.filter(p => {
+      if (!p.fecha) return false;
+      const f = new Date(p.fecha);
+      return f >= desde && f <= hasta;
+    });
+
+    if (!enRango.length) { el.innerHTML = '<p class="aa-empty">Sin datos en el rango de fechas seleccionado.</p>'; return; }
+
+    turnosResumen = [];
+    let html = '';
+    const NM = ['','Emergencia','Urgencia No Diferible','Urgencia Diferible','No Programable','Programable'];
+
+    const turnosAAnalizar = [
+      ...checked.map(key => ({ key, t: TURNOS_DEF[key] })).filter(x => x.t),
+      ...customTurnos.map(t => ({ key: null, t }))
+    ];
+    for (const { key, t } of turnosAAnalizar) {
+      const pac = _filtrarPorTurno(enRango, t);
+      const s   = _statsTurno(pac);
+      turnosResumen.push({ key, t, s });
+
+      const pct = n => s.total ? Math.round(s.cnt[n]/s.total*100) : 0;
+      html += `<div class="turno-block">
+        <div class="turno-block-header">
+          <span>${t.emoji} ${t.label} <span class="turno-hora-tag">${t.horaStr}</span></span>
+          <span class="turno-total-badge">${s.total} consulta${s.total!==1?'s':''}</span>
+        </div>`;
+      if (s.total === 0) {
+        html += '<p class="aa-empty" style="margin:0;padding:0.3rem 0 0.1rem">Sin actividad en este turno</p>';
+      } else {
+        html += `<table class="ses-table" style="max-width:380px">
+          <thead><tr><th>Nivel</th><th>Descripción</th><th>Cant.</th><th>%</th></tr></thead>
+          <tbody>
+            ${[1,2,3,4,5].map(n=>`<tr>
+              <td>${NIVEL_EMOJIS[n]} N${n}</td>
+              <td style="font-size:0.73rem;color:var(--text-muted)">${NM[n]}</td>
+              <td style="font-family:var(--font-mono)">${s.cnt[n]}</td>
+              <td><span class="nivel-badge nb-${n}" style="font-size:0.68rem;padding:0.05rem 0.4rem">${pct(n)}%</span></td>
+            </tr>`).join('')}
+            <tr style="font-weight:600"><td colspan="2">Total</td><td style="font-family:var(--font-mono)">${s.total}</td><td></td></tr>
+          </tbody>
+        </table>
+        <div class="turno-meta">
+          Edad promedio: <strong>${s.edadProm!==null?s.edadProm+' años':'sin datos'}</strong>
+          &nbsp;·&nbsp; Modificados: <strong>${s.mods} (${s.total?Math.round(s.mods/s.total*100):0}%)</strong>
+        </div>`;
+      }
+      html += '</div>';
+    }
+
+    if (turnosResumen.length > 1) {
+      html += `<div class="turno-block">
+        <div class="turno-block-header"><span>📊 Tabla comparativa</span></div>
+        <div class="pac-table-wrap"><table class="ses-table">
+          <thead><tr>
+            <th>Turno</th><th>Total</th>
+            ${[1,2,3,4,5].map(n=>`<th>${NIVEL_EMOJIS[n]} N${n}</th>`).join('')}
+            <th>Edad prom.</th><th>% Modif.</th>
+          </tr></thead>
+          <tbody>
+            ${turnosResumen.map(r=>`<tr>
+              <td>${r.t.emoji} ${r.t.label} <span style="font-size:0.68rem;color:var(--text-muted)">${r.t.horaStr}</span></td>
+              <td style="font-weight:600;font-family:var(--font-mono)">${r.s.total}</td>
+              ${[1,2,3,4,5].map(n=>`<td style="font-family:var(--font-mono)">${r.s.cnt[n]}</td>`).join('')}
+              <td style="font-family:var(--font-mono)">${r.s.edadProm!==null?r.s.edadProm+' a.':'—'}</td>
+              <td style="font-family:var(--font-mono)">${r.s.total?Math.round(r.s.mods/r.s.total*100)+'%':'—'}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table></div>
+      </div>`;
+    }
+
+    html += `<div style="display:flex;justify-content:flex-end;margin-top:0.8rem">
+      <button class="btn-action" onclick="exportarTurnosPDF()">⬇ Exportar PDF</button>
+    </div>`;
+    el.innerHTML = html;
+  }
+
+  function agregarTurnoPersonalizado() {
+    const container = document.getElementById('turnos-custom-list');
+    const row = document.createElement('div');
+    row.className = 'turno-custom-row';
+    row.innerHTML = `
+      <input type="text" class="pac-date-in" placeholder="Nombre del turno" style="flex:1;min-width:110px" />
+      <input type="time" class="pac-date-in" value="08:00" title="Hora inicio" />
+      <span style="color:var(--text-muted);font-size:0.8rem">–</span>
+      <input type="time" class="pac-date-in" value="20:00" title="Hora fin" />
+      <button class="turno-custom-del" onclick="this.closest('.turno-custom-row').remove()" title="Eliminar">✕</button>
+    `;
+    container.appendChild(row);
+  }
+
+  function exportarTurnosPDF() {
+    if (!turnosResumen || !turnosResumen.length) return;
+    if (!window.jspdf) { alert('PDF no disponible.'); return; }
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF();
+    const dStr = turnosDesde ? new Date(turnosDesde+'T00:00:00').toLocaleDateString('es-UY') : '—';
+    const hStr = turnosHasta ? new Date(turnosHasta+'T00:00:00').toLocaleDateString('es-UY') : '—';
+    let y = pdfHeader(doc, 'Análisis por Turnos', `Período: ${dStr} – ${hStr}`);
+    const NM = ['','Emergencia','Urgencia No Diferible','Urgencia Diferible','No Programable','Programable'];
+
+    for (const r of turnosResumen) {
+      if (y > 255) { doc.addPage(); y = 14; }
+      doc.setFontSize(10); doc.setFont('helvetica','bold');
+      doc.text(`${r.t.emoji} ${r.t.label}  (${r.t.horaStr})  —  ${r.s.total} consultas`, 14, y); y += 5;
+      if (r.s.total === 0) {
+        doc.setFontSize(8.5); doc.setFont('helvetica','normal'); doc.setTextColor(120);
+        doc.text('Sin actividad en este turno', 14, y); doc.setTextColor(0); y += 6;
+      } else {
+        doc.autoTable({
+          startY: y,
+          head: [['Nivel','Descripción','Cant.','%']],
+          body: [1,2,3,4,5].map(n=>[
+            `N${n}`, NM[n], r.s.cnt[n],
+            r.s.total ? Math.round(r.s.cnt[n]/r.s.total*100)+'%' : '0%'
+          ]),
+          foot: [['','Total', r.s.total,'100%']],
+          styles:{fontSize:8,cellPadding:2},
+          headStyles:{fillColor:[42,109,181],textColor:255,fontStyle:'bold'},
+          footStyles:{fontStyle:'bold',fillColor:[230,230,240]},
+          alternateRowStyles:{fillColor:[245,245,250]},
+          tableWidth:110, margin:{left:14},
+        });
+        y = doc.lastAutoTable.finalY + 3;
+        doc.setFontSize(8.5); doc.setFont('helvetica','normal');
+        doc.text(
+          `Edad promedio: ${r.s.edadProm!==null?r.s.edadProm+' años':'sin datos'}  ·  Modificados: ${r.s.mods} (${r.s.total?Math.round(r.s.mods/r.s.total*100):0}%)`,
+          14, y
+        ); y += 8;
+      }
+    }
+
+    if (turnosResumen.length > 1) {
+      if (y > 230) { doc.addPage(); y = 14; }
+      doc.setFontSize(10); doc.setFont('helvetica','bold');
+      doc.text('Tabla comparativa', 14, y); y += 5;
+      doc.autoTable({
+        startY: y,
+        head: [['Turno','Total','N1','N2','N3','N4','N5','Edad prom.','% Modif.']],
+        body: turnosResumen.map(r=>[
+          `${r.t.emoji} ${r.t.label}`, r.s.total,
+          r.s.cnt[1],r.s.cnt[2],r.s.cnt[3],r.s.cnt[4],r.s.cnt[5],
+          r.s.edadProm!==null?r.s.edadProm+' a.':'—',
+          r.s.total?Math.round(r.s.mods/r.s.total*100)+'%':'—'
+        ]),
+        styles:{fontSize:8,cellPadding:2},
+        headStyles:{fillColor:[42,109,181],textColor:255,fontStyle:'bold'},
+        alternateRowStyles:{fillColor:[245,245,250]},
+        margin:{left:14},
+      });
+    }
+    const pgCount=doc.internal.getNumberOfPages();
+    for(let i=1;i<=pgCount;i++){doc.setPage(i);addPdfFooter(doc);}
+    doc.save(`sut-turnos-${turnosDesde||'analisis'}.pdf`);
+  }
+
+  // ─── BIBLIOGRAFÍA ────────────────────────────────────────────
+  function abrirFuente(url, titulo) {
+    if (confirm('Abrir enlace externo en una nueva pestaña:\n\n' + titulo + '\n\n' + url)) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  }
+
+  // ─── TECLA ENTER en bienvenida ───────────────────────────────
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && document.getElementById('screen-welcome').style.display !== 'none') {
+      checkPass();
+    }
+  });
+</script>
+</body>
+</html>
