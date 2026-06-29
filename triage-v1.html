@@ -762,11 +762,15 @@
     .btn-pin-cancel:hover { border-color:var(--text-muted); }
 
     /* ─── HEADER USER BADGE ───────────────────────────────────── */
-    .header-user-badge { display:flex; align-items:center; gap:0.45rem; padding:0.24rem 0.65rem 0.24rem 0.38rem; background:var(--bg3); border-radius:20px; border:1px solid var(--border); cursor:default; }
+    .header-user-badge { display:flex; align-items:center; gap:0.45rem; padding:0.24rem 0.65rem 0.24rem 0.38rem; background:var(--bg3); border-radius:20px; border:1px solid var(--border); cursor:pointer; transition:border-color 0.15s, background 0.15s; }
+    .header-user-badge:hover { border-color:var(--azul); background:var(--bg); }
     .huser-av { width:21px; height:21px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.58rem; font-weight:700; color:#fff; flex-shrink:0; }
     .huser-info { line-height:1.25; }
     .huser-nombre { font-size:0.74rem; font-weight:600; }
     .huser-rol { font-size:0.6rem; color:var(--text-muted); display:block; }
+    .huser-edit { font-size:0.65rem; color:var(--text-muted); opacity:0.7; margin-left:0.05rem; pointer-events:none; }
+    #modal-cambio-usuario { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.72); backdrop-filter:blur(4px); z-index:9998; align-items:center; justify-content:center; padding:1.5rem; }
+    #modal-cambio-usuario.active { display:flex; }
 
     /* ─── CONFIG ADMIN ────────────────────────────────────────── */
     #modal-config-admin { display:none; position:fixed; inset:0; background:var(--bg); z-index:9995; flex-direction:column; overflow:hidden; }
@@ -850,6 +854,229 @@
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    /* ─── ALERTAS CRÍTICAS N1/N2 ─────────────────────────── */
+    #alerta-critica-container {
+      position: fixed;
+      top: 4.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10001;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      max-width: 480px;
+      width: calc(100% - 2rem);
+      pointer-events: none;
+    }
+    .alerta-critica {
+      pointer-events: all;
+      border-radius: 14px;
+      padding: 0.95rem 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      box-shadow: 0 8px 36px rgba(0,0,0,0.55);
+      animation: alertaSlideIn 0.32s cubic-bezier(.22,1,.36,1);
+    }
+    .alerta-n1-card {
+      background: #C82020;
+      border: 2.5px solid #ff5555;
+      color: #fff;
+      animation: alertaSlideIn 0.32s cubic-bezier(.22,1,.36,1), alertaBlink 1.3s ease-in-out infinite;
+    }
+    .alerta-n2-card {
+      background: #C96A00;
+      border: 2.5px solid #ffaa44;
+      color: #fff;
+    }
+    .alerta-critica-body { flex: 1; min-width: 0; }
+    .alerta-critica-titulo {
+      font-size: 0.94rem;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      line-height: 1.3;
+    }
+    .alerta-critica-sub {
+      font-size: 0.73rem;
+      opacity: 0.88;
+      margin-top: 0.1rem;
+    }
+    .btn-alerta-ok {
+      background: rgba(255,255,255,0.18);
+      border: 2px solid rgba(255,255,255,0.55);
+      border-radius: 8px;
+      color: #fff;
+      padding: 0.4rem 0.85rem;
+      font-size: 0.81rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .btn-alerta-ok:hover { background: rgba(255,255,255,0.32); }
+    @keyframes alertaSlideIn {
+      from { transform: translateY(-16px); opacity: 0; }
+      to   { transform: translateY(0);     opacity: 1; }
+    }
+    @keyframes alertaBlink {
+      0%, 100% { box-shadow: 0 8px 36px rgba(200,30,30,0.65); }
+      50%       { box-shadow: 0 8px 52px rgba(200,30,30,1); opacity: 0.87; }
+    }
+  </style>
+  <style>
+    /* ─── TEMPORIZADORES DE PACIENTES ──────────────────────────── */
+    .pac-timer {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 0.18rem 0.42rem;
+      border-radius: 6px;
+      display: inline-block;
+      min-width: 56px;
+      text-align: center;
+      letter-spacing: 0.04em;
+    }
+    .pac-timer-verde    { background: rgba(46,158,91,0.13);  color: var(--verde); }
+    .pac-timer-amarillo { background: rgba(232,193,58,0.16); color: #8a6800; }
+    .pac-timer-rojo     { background: rgba(214,40,40,0.14);  color: var(--rojo); animation: timerBlink 1.1s ease-in-out infinite; }
+    .pac-timer-final    { font-family: var(--font-mono); font-size: 0.76rem; color: var(--verde); font-weight: 600; }
+    .pac-asistido-row td { opacity: 0.62; }
+    @keyframes timerBlink { 0%,100%{opacity:1} 50%{opacity:0.42} }
+    .btn-asistido {
+      display: inline-flex; align-items: center; gap: 0.22rem;
+      background: rgba(46,158,91,0.1); border: 1px solid rgba(46,158,91,0.35);
+      border-radius: 6px; color: var(--verde);
+      padding: 0.22rem 0.52rem; font-size: 0.72rem; font-weight: 600;
+      cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .btn-asistido:hover { background: rgba(46,158,91,0.22); border-color: var(--verde); }
+    /* ─── ALERTAS DE TIEMPO VENCIDO ────────────────────────────── */
+    #alerta-timer-container {
+      position: fixed; top: 4.5rem; right: 1.2rem;
+      z-index: 10000; display: flex; flex-direction: column;
+      gap: 0.45rem; max-width: 320px; width: calc(100% - 2.4rem);
+      pointer-events: none;
+    }
+    .alerta-timer-card {
+      pointer-events: all; border-radius: 12px;
+      padding: 0.75rem 0.95rem; display: flex; align-items: center;
+      gap: 0.7rem; box-shadow: 0 6px 22px rgba(0,0,0,0.45);
+      background: var(--bg2);
+      border-top: 1px solid var(--border); border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border); border-left: 4px solid var(--rojo);
+      animation: alertaSlideIn 0.28s cubic-bezier(.22,1,.36,1);
+    }
+    .alerta-timer-body { flex: 1; min-width: 0; }
+    .alerta-timer-titulo { font-size: 0.8rem; font-weight: 700; }
+    .alerta-timer-sub    { font-size: 0.69rem; color: var(--text-muted); margin-top: 0.06rem; }
+    .btn-timer-ok {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 7px; color: var(--text-muted);
+      padding: 0.3rem 0.6rem; font-size: 0.72rem; font-weight: 600;
+      cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: background 0.15s;
+    }
+    .btn-timer-ok:hover { background: var(--border); color: var(--text); }
+    /* ─── ADMIN CONFIG TIEMPOS SUT ──────────────────────────────── */
+    .cfg-tiempo-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.55rem 0; border-bottom: 1px solid var(--border);
+    }
+    .cfg-tiempo-row:last-of-type { border-bottom: none; }
+    .cfg-tiempo-row label { font-size: 0.85rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; }
+    .cfg-tiempo-input {
+      width: 72px; border: 1px solid var(--border); border-radius: 6px;
+      background: var(--bg3); color: var(--text); padding: 0.28rem 0.5rem;
+      font-family: var(--font-mono); font-size: 0.88rem; text-align: right;
+    }
+    .cfg-tiempo-input:focus { border-color: var(--azul); outline: none; }
+    /* ─── MÓDULO AMBULANCIAS ─────────────────────────────────────── */
+    .btn-ambulancias {
+      position: relative; background: rgba(214,40,40,0.09);
+      border: 1px solid rgba(214,40,40,0.32); border-radius: var(--radius);
+      color: var(--rojo); padding: 0.3rem 0.65rem; font-size: 0.82rem;
+      cursor: pointer; font-weight: 600; transition: all 0.2s; white-space: nowrap;
+    }
+    .btn-ambulancias:hover { background: rgba(214,40,40,0.18); }
+    .amb-badge {
+      position: absolute; top: -6px; right: -7px;
+      background: var(--rojo); color: #fff; border-radius: 9999px;
+      font-size: 0.6rem; font-weight: 700; min-width: 16px; height: 16px;
+      display: flex; align-items: center; justify-content: center; padding: 0 3px;
+    }
+    #modal-ambulancias {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.72); backdrop-filter: blur(4px);
+      z-index: 9999; align-items: center; justify-content: center; padding: 1rem;
+    }
+    #modal-ambulancias.active { display: flex; }
+    .amb-modal-box {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 14px;
+      max-width: 680px; width: 100%; max-height: 90vh;
+      display: flex; flex-direction: column; box-shadow: var(--shadow); overflow: hidden;
+    }
+    .amb-modal-hdr {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.85rem 1.3rem; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .amb-modal-hdr h3 { font-size: 1rem; margin: 0; }
+    .amb-modal-body { padding: 1.1rem 1.3rem; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 1rem; }
+    .amb-form { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; }
+    .amb-lista { display: flex; flex-direction: column; gap: 0.45rem; }
+    .amb-card {
+      background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
+      padding: 0.7rem 0.9rem; display: flex; align-items: center; gap: 0.7rem;
+    }
+    .amb-card-info { flex: 1; min-width: 0; }
+    .amb-card-nombre { font-size: 0.87rem; font-weight: 600; }
+    .amb-card-meta   { font-size: 0.74rem; color: var(--text-muted); margin-top: 0.1rem; }
+    .amb-card-timer  { font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: var(--naranja); min-width: 50px; text-align: right; flex-shrink: 0; }
+    .amb-card-actions { display: flex; gap: 0.35rem; flex-shrink: 0; }
+    .btn-amb-ok {
+      background: rgba(46,158,91,0.1); border: 1px solid rgba(46,158,91,0.32);
+      border-radius: 7px; color: var(--verde); padding: 0.24rem 0.5rem;
+      font-size: 0.73rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background 0.15s;
+    }
+    .btn-amb-ok:hover { background: rgba(46,158,91,0.22); }
+    .btn-amb-cancel {
+      background: rgba(214,40,40,0.07); border: 1px solid rgba(214,40,40,0.22);
+      border-radius: 7px; color: var(--rojo); padding: 0.24rem 0.5rem;
+      font-size: 0.73rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background 0.15s;
+    }
+    .btn-amb-cancel:hover { background: rgba(214,40,40,0.16); }
+    .amb-hist-row {
+      font-size: 0.79rem; padding: 0.38rem 0; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap;
+    }
+    .amb-hist-row:last-child { border-bottom: none; }
+    .amb-state-badge { font-size: 0.68rem; font-weight: 600; padding: 0.13rem 0.4rem; border-radius: 5px; flex-shrink: 0; }
+    .amb-state-ingresado { background: rgba(46,158,91,0.12); color: var(--verde); }
+    .amb-state-cancelado { background: rgba(214,40,40,0.1); color: var(--rojo); }
+    /* ─── MODAL PERÍODO PDF ──────────────────────────────────────── */
+    #modal-pdf-periodo {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.72); backdrop-filter: blur(4px);
+      z-index: 10001; align-items: center; justify-content: center; padding: 1rem;
+    }
+    #modal-pdf-periodo.active { display: flex; }
+    .pdf-periodo-card {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 14px;
+      padding: 1.4rem 1.5rem; max-width: 360px; width: 100%; box-shadow: var(--shadow);
+    }
+    .pdf-periodo-card h3 { font-size: 0.94rem; font-weight: 700; margin-bottom: 1rem; }
+    .pdf-period-opts { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.9rem; }
+    .pdf-period-opt {
+      display: flex; align-items: center; gap: 0.5rem; cursor: pointer;
+      padding: 0.45rem 0.7rem; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--bg3); font-size: 0.84rem; transition: all 0.15s; user-select: none;
+    }
+    .pdf-period-opt:hover { border-color: var(--azul); }
+    .pdf-period-opt.active { border-color: var(--azul); background: rgba(42,109,181,0.09); font-weight: 600; color: var(--azul); }
+    #pdf-custom-range {
+      display: none; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.6rem;
+    }
+  </style>
 </head>
 <body>
 
@@ -1004,13 +1231,17 @@
     </div>
     <div class="header-right">
       <span id="reloj" style="font-size:0.8rem;color:var(--text-muted);font-family:var(--font-mono)"></span>
-      <div class="header-user-badge" id="header-user-badge" style="display:none">
+      <div class="header-user-badge" id="header-user-badge" style="display:none" onclick="abrirCambioUsuario()" title="Cambiar usuario activo">
         <div class="huser-av" id="huser-av"></div>
         <div class="huser-info">
           <div class="huser-nombre" id="huser-nombre">—</div>
           <span class="huser-rol" id="huser-rol">—</span>
         </div>
+        <span class="huser-edit" aria-hidden="true">✏️</span>
       </div>
+      <button class="btn-ambulancias" id="btn-ambulancias" onclick="abrirAmbulancias()" title="Ambulancias en espera">
+        🚑 Ambulancias<span class="amb-badge" id="amb-badge" style="display:none">0</span>
+      </button>
       <button class="btn-theme" id="btn-theme" onclick="toggleTheme()" title="Cambiar modo claro/oscuro">🌙</button>
       <button class="btn-icon-hdr" onclick="abrirConfigAdmin()" title="Configuración de administración">⚙️</button>
       <button class="btn-cerrar" onclick="bloquear()">🔒 Bloquear</button>
@@ -1274,8 +1505,8 @@
                 <th>Nivel sugerido</th>
                 <th>AVPU</th>
                 <th>Dolor</th>
-                <th>Tiempo</th>
-                <th></th>
+                <th>Timer</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody id="pac-tbody"></tbody>
@@ -1399,6 +1630,16 @@
           </div>
         </div>
         <div id="turnos-result"></div>
+      </div>
+
+      <div class="card" id="card-tiempos-asist">
+        <h3>Tiempos de asistencia <span style="font-size:0.72rem;font-weight:400;color:var(--text-muted);text-transform:none">— pacientes marcados como asistidos</span></h3>
+        <div id="est-tiempos-asist-body"></div>
+      </div>
+
+      <div class="card" id="card-ambulancias-est">
+        <h3>🚑 Ambulancias <span style="font-size:0.72rem;font-weight:400;color:var(--text-muted);text-transform:none">— traslados en el período</span></h3>
+        <div id="est-ambulancias-body"></div>
       </div>
 
     </div>
@@ -1595,6 +1836,84 @@
 
 </div><!-- /screen-app -->
 
+<!-- MODAL AMBULANCIAS -->
+<div id="modal-ambulancias" onclick="if(event.target===this)cerrarAmbulancias()">
+  <div class="amb-modal-box">
+    <div class="amb-modal-hdr">
+      <h3>🚑 Ambulancias en espera</h3>
+      <button class="btn-cfg-close" onclick="cerrarAmbulancias()">✕ Cerrar</button>
+    </div>
+    <div class="amb-modal-body">
+
+      <div class="card" style="margin:0">
+        <h3 style="font-size:0.87rem;margin-bottom:0.75rem">Registrar nueva ambulancia</h3>
+        <div class="amb-form">
+          <div class="vital-field">
+            <label>Nombre del paciente</label>
+            <input type="text" id="amb-nombre" placeholder="Nombre completo" autocomplete="off"
+              onkeydown="if(event.key==='Enter')registrarAmbulancia()" />
+          </div>
+          <div class="vital-field">
+            <label>Patología / motivo de traslado</label>
+            <input type="text" id="amb-patologia" placeholder="Ej: TCE, IAM, Quemado…" autocomplete="off" />
+          </div>
+          <div class="vital-field">
+            <label>Hora de aviso</label>
+            <input type="time" id="amb-hora-aviso" class="pac-date-in" />
+          </div>
+          <div class="vital-field">
+            <label>Procedencia (opcional)</label>
+            <input type="text" id="amb-procedencia" placeholder="Centro que traslada" autocomplete="off" />
+          </div>
+        </div>
+        <button class="btn-next" style="margin-top:0.8rem;width:100%" onclick="registrarAmbulancia()">🚑 Registrar ambulancia</button>
+      </div>
+
+      <div>
+        <div style="font-size:0.76rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.45rem">En espera</div>
+        <div class="amb-lista" id="amb-lista"></div>
+      </div>
+
+      <details>
+        <summary style="cursor:pointer;font-size:0.81rem;font-weight:600;color:var(--text-muted);padding:0.3rem 0;list-style:none">
+          ▶ Historial de hoy
+        </summary>
+        <div id="amb-historial" style="margin-top:0.45rem"></div>
+      </details>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PERÍODO PDF -->
+<div id="modal-pdf-periodo" onclick="if(event.target===this)document.getElementById('modal-pdf-periodo').classList.remove('active')">
+  <div class="pdf-periodo-card">
+    <h3>📄 Período para el PDF</h3>
+    <div class="pdf-period-opts">
+      <label class="pdf-period-opt active" onclick="_pdfOptSel(this,'hoy')">
+        <input type="radio" name="pdf-per" value="hoy" checked style="display:none"> Hoy
+      </label>
+      <label class="pdf-period-opt" onclick="_pdfOptSel(this,'semana')">
+        <input type="radio" name="pdf-per" value="semana" style="display:none"> Esta semana
+      </label>
+      <label class="pdf-period-opt" onclick="_pdfOptSel(this,'mes')">
+        <input type="radio" name="pdf-per" value="mes" style="display:none"> Este mes
+      </label>
+      <label class="pdf-period-opt" onclick="_pdfOptSel(this,'custom')">
+        <input type="radio" name="pdf-per" value="custom" style="display:none"> Rango personalizado
+      </label>
+    </div>
+    <div id="pdf-custom-range" style="display:none;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.9rem">
+      <div class="vital-field" style="margin:0"><label style="font-size:0.75rem">Desde</label><input type="date" id="pdf-desde" class="pac-date-in"></div>
+      <div class="vital-field" style="margin:0"><label style="font-size:0.75rem">Hasta</label><input type="date" id="pdf-hasta" class="pac-date-in"></div>
+    </div>
+    <div style="display:flex;gap:0.6rem;margin-top:0.3rem">
+      <button class="btn-next" style="flex:1" onclick="confirmarGenerarPDF()">📄 Generar PDF</button>
+      <button class="btn-sm" onclick="document.getElementById('modal-pdf-periodo').classList.remove('active')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL CONFIG INSTITUCIONAL — outside screen-app -->
 <div id="modal-config">
   <div class="config-card">
@@ -1669,6 +1988,24 @@
   </div>
 </div>
 
+<!-- MODAL CAMBIO DE USUARIO -->
+<div id="modal-cambio-usuario" onclick="if(event.target===this)cancelarCambioUsuario()">
+  <div class="admin-pass-card">
+    <h3>✏️ Cambiar usuario activo</h3>
+    <p style="margin-bottom:0.7rem;font-size:0.83rem;color:var(--text-muted)">Ingresá la cédula del usuario al que querés cambiar</p>
+    <div class="pwd-eye-wrap" style="margin-bottom:0.5rem">
+      <input type="password" class="pin-input" id="cambio-usr-cedula" placeholder="Cédula" maxlength="12" autocomplete="off" onkeydown="if(event.key==='Enter')confirmarCambioUsuario()" />
+      <button class="btn-eye" type="button" onclick="togglePwd('cambio-usr-cedula',this)" tabindex="-1">👁</button>
+    </div>
+    <div class="pin-error" id="cambio-usr-error"></div>
+    <div class="pin-success-msg" id="cambio-usr-ok" style="display:none"></div>
+    <div class="pin-btns" id="cambio-usr-btns">
+      <button class="btn-pin-ok" onclick="confirmarCambioUsuario()">Confirmar</button>
+      <button class="btn-pin-cancel" onclick="cancelarCambioUsuario()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <!-- CONFIG ADMIN (full-screen overlay) — outside screen-app -->
 <div id="modal-config-admin">
   <div class="cfg-adm-bar">
@@ -1678,6 +2015,8 @@
       <button class="cfg-tab" data-tab="institucional" onclick="showCfgTab('institucional')">🏥 Datos institucionales</button>
       <button class="cfg-tab" data-tab="sesiones" onclick="showCfgTab('sesiones')">📋 Sesiones</button>
       <button class="cfg-tab" data-tab="auditoria" onclick="showCfgTab('auditoria')">🔍 Auditoría</button>
+      <button class="cfg-tab" data-tab="tiempos" onclick="showCfgTab('tiempos')">⏱ Tiempos SUT</button>
+      <button class="cfg-tab" data-tab="ambulancias_audit" onclick="showCfgTab('ambulancias_audit')">🚑 Auditoría Amb.</button>
     </div>
     <button class="btn-cfg-close" onclick="cerrarConfigAdmin()">✕ Cerrar</button>
   </div>
@@ -2043,6 +2382,7 @@
     datos.push(reg);
     localStorage.setItem('sut_pacientes', JSON.stringify(datos));
     mostrarResumenPaciente(reg);
+    mostrarAlertaCritica(reg);
   }
 
   function resetClasificacion() {
@@ -2163,8 +2503,31 @@
       const bFin=nf?`<span class="nivel-badge nb-${nf}">${NIVEL_EMOJIS[nf]} N${nf}</span>`:'—';
       const bSug=ns?`<span class="nivel-badge nb-${ns}">${NIVEL_EMOJIS[ns]} N${ns}</span>`:'—';
       const modTag=p.override?`<span class="modified-tag">✏ modificado</span>`:'';
-      const rowCls=p.nivel===1?'row-n1':p.nivel===2?'row-n2':'';
-      return `<tr class="${rowCls}">
+      const asistido=!!p.asistidoEn;
+      const rowCls=(p.nivel===1?'row-n1':p.nivel===2?'row-n2':'')+(asistido?' pac-asistido-row':'');
+
+      let timerCell;
+      if (asistido) {
+        const elapsedSec=d&&p.asistidoEn?Math.floor((new Date(p.asistidoEn)-d)/1000):0;
+        const asistHora=new Date(p.asistidoEn).toLocaleTimeString('es-UY',{hour:'2-digit',minute:'2-digit'});
+        const sutMax=getSutTiempos()[p.nivel]||0;
+        const cumple=sutMax===0?elapsedSec===0:elapsedSec<=sutMax*60;
+        const elapsedMin=Math.floor(elapsedSec/60);
+        timerCell=`<div title="Triage: ${hStr} → Asistido: ${asistHora} · ${cumple?'Dentro del tiempo SUT':'Tiempo SUT superado'}">
+          <span class="pac-timer-final" style="color:${cumple?'var(--verde)':'var(--rojo)'}">✅ ${elapsedMin} min</span><br>
+          <span style="color:var(--text-muted);font-size:0.67rem;font-family:var(--font-mono)">${hStr}→${asistHora}</span>
+        </div>`;
+      } else if (!p.fecha) {
+        timerCell='<span style="color:var(--text-muted);font-size:0.78rem">—</span>';
+      } else {
+        timerCell=`<span class="pac-timer pac-timer-verde" data-fecha="${p.fecha}" data-nivel="${p.nivel||0}" data-idx="${p._idx}">--:--</span>`;
+      }
+
+      const accionesCell=asistido
+        ?`<span style="font-size:0.68rem;color:var(--verde);white-space:nowrap">Atendido ${new Date(p.asistidoEn).toLocaleTimeString('es-UY',{hour:'2-digit',minute:'2-digit'})}</span>&nbsp;<button class="btn-del" onclick="eliminarPaciente(${p._idx})" title="Eliminar">🗑</button>`
+        :`<button class="btn-asistido" onclick="window._marcarAsistido(${p._idx})">✅ Asistido</button>&nbsp;<button class="btn-del" onclick="eliminarPaciente(${p._idx})" title="Eliminar">🗑</button>`;
+
+      return `<tr class="${rowCls.trim()}">
         <td><span style="font-family:var(--font-mono);font-size:0.78rem">${fStr}</span><br><span style="color:var(--text-muted);font-size:0.73rem">${hStr}</span></td>
         <td>${p.id||'—'}</td>
         <td>${mot}${p.motivoTexto?`<br><span style="color:var(--text-muted);font-size:0.72rem">${p.motivoTexto}</span>`:''}</td>
@@ -2172,8 +2535,8 @@
         <td>${bSug}</td>
         <td><code style="font-size:0.81rem">${p.avpu||'—'}</code></td>
         <td>${p.dolor!=null&&p.dolor!==undefined?p.dolor+'/10':'—'}</td>
-        <td style="font-family:var(--font-mono);font-size:0.77rem;color:var(--text-muted)">${tiempoTranscurrido(p.fecha)}</td>
-        <td><button class="btn-del" onclick="eliminarPaciente(${p._idx})" title="Eliminar">🗑</button></td>
+        <td>${timerCell}</td>
+        <td style="white-space:nowrap">${accionesCell}</td>
       </tr>`;
     }).join('');
   }
@@ -2197,7 +2560,7 @@
     const cfg = getCentroInfo();
     const centro = cfg && cfg.centro ? ' — ' + cfg.centro : '';
     const fecha = new Date().toLocaleString('es-UY', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-    const text = 'Generado por SUT Triage' + centro + ' — ' + fecha;
+    const text = 'Generado por SUT Triage v1.0' + centro + ' — ' + fecha;
     const pageH = doc.internal.pageSize.height;
     const pageW = doc.internal.pageSize.width;
     doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.setTextColor(150);
@@ -2292,6 +2655,8 @@
       return true;
     });
     renderKPIs(periodo); renderDistribucion(periodo); drawDonut(periodo); renderIndices(periodo); renderAnalisisAvanzado(periodo);
+    renderEstadisticasTiempos(periodo);
+    renderEstadisticasAmbulancias(desde, hasta);
   }
 
   function renderKPIs(data) {
@@ -2413,34 +2778,384 @@
     </table>`;
   }
 
+  let _pdfPeriodOvr = null;
+  let _pdfAdminAction = null;
+
+  function abrirModalPDFAdmin(action) {
+    _pdfAdminAction = action;
+    const modal = document.getElementById('modal-pdf-periodo');
+    if (!modal) return;
+    modal.classList.add('active');
+    document.querySelectorAll('.pdf-period-opt').forEach((el,i) => el.classList.toggle('active', i===0));
+    document.querySelectorAll('input[name="pdf-per"]').forEach((r,i) => r.checked = i===0);
+    document.getElementById('pdf-custom-range').style.display = 'none';
+  }
+
+  function _pdfOptSel(lbl, val) {
+    document.querySelectorAll('.pdf-period-opt').forEach(el => el.classList.remove('active'));
+    lbl.classList.add('active');
+    document.querySelectorAll('input[name="pdf-per"]').forEach(r => r.checked = r.value===val);
+    document.getElementById('pdf-custom-range').style.display = val==='custom' ? 'grid' : 'none';
+  }
+
+  function confirmarGenerarPDF() {
+    const val = (document.querySelector('input[name="pdf-per"]:checked') || {}).value || 'hoy';
+    const now = new Date();
+    let desde, hasta = new Date(now), label = '';
+    hasta.setHours(23,59,59,999);
+    if (val==='hoy') {
+      desde = new Date(now); desde.setHours(0,0,0,0);
+      label = 'Hoy — '+desde.toLocaleDateString('es-UY');
+    } else if (val==='semana') {
+      desde = new Date(now);
+      const wd = desde.getDay(); desde.setDate(desde.getDate()-(wd===0?6:wd-1)); desde.setHours(0,0,0,0);
+      label = 'Esta semana ('+desde.toLocaleDateString('es-UY')+' – '+hasta.toLocaleDateString('es-UY')+')';
+    } else if (val==='mes') {
+      desde = new Date(now.getFullYear(), now.getMonth(), 1);
+      label = 'Este mes — '+desde.toLocaleDateString('es-UY',{month:'long',year:'numeric'});
+    } else {
+      const dv = (document.getElementById('pdf-desde')||{}).value;
+      const hv = (document.getElementById('pdf-hasta')||{}).value;
+      if (!dv || !hv) { alert('Seleccioná fecha de inicio y fin.'); return; }
+      desde = new Date(dv+'T00:00:00'); hasta = new Date(hv+'T23:59:59');
+      label = dv+' – '+hv;
+    }
+    document.getElementById('modal-pdf-periodo').classList.remove('active');
+    if (_pdfAdminAction) {
+      const act = _pdfAdminAction; _pdfAdminAction = null;
+      if (act === 'sesiones')  { _generarSesionesAdminPDF(desde, hasta, label); return; }
+      if (act === 'auditoria') { _generarAuditoriaAdminPDF(desde, hasta, label); return; }
+    }
+    _pdfPeriodOvr = { desde, hasta, label };
+    exportarEstadisticasPDF();
+  }
+
   function exportarEstadisticasPDF() {
     if (!window.jspdf) { alert('La librería PDF no está disponible. Revisá tu conexión a internet.'); return; }
-    const {jsPDF}=window.jspdf;
-    const doc=new jsPDF();
-    const datos=JSON.parse(localStorage.getItem('sut_pacientes')||'[]');
-    const [desde,hasta]=getEstFechas();
-    const per=datos.filter(p=>{ if(!p.fecha) return false; const f=new Date(p.fecha); return f>=desde&&f<=hasta; });
-    const total=per.length;
-    const mods=per.filter(p=>p.override).length;
-    const sub=per.filter(p=>p.override&&p.nivel<p.nivelSugerido).length;
-    const baj=per.filter(p=>p.override&&p.nivel>p.nivelSugerido).length;
-    const cF=[0,0,0,0,0,0];
-    per.forEach(p=>{ if(p.nivel>=1&&p.nivel<=5) cF[p.nivel]++; });
-    const NM=['','Emergencia','Urgencia No Diferible','Urgencia Diferible','No Programable','Programable'];
-    const uFiltro=document.getElementById('est-filtro-usuario')?.value||'';
-    const uNombre=uFiltro?getUsuarios().find(u=>u.id===uFiltro)?.nombre:'';
-    const periodoSub=`Período: ${desde.toLocaleDateString('es-UY')} – ${hasta.toLocaleDateString('es-UY')}${uNombre?' | Usuario: '+uNombre:''}`;
-    const startY=pdfHeader(doc,'Informe Estadístico',periodoSub);
-    doc.autoTable({startY,head:[['Indicador','Valor']],body:[
-      ['Total de clasificaciones',total],
-      ['Modificadas por profesional',`${mods} (${total?Math.round(mods/total*100):0}%)`],
-      ['Nivel subido (más urgente)',sub],
-      ['Nivel bajado (menos urgente)',baj],
-      ...[1,2,3,4,5].map(n=>[`N${n} — ${NM[n]}`,`${cF[n]} (${total?Math.round(cF[n]/total*100):0}%)`])
-    ],styles:{fontSize:9,cellPadding:3},headStyles:{fillColor:[42,109,181],textColor:255,fontStyle:'bold'},alternateRowStyles:{fillColor:[245,245,250]},
-    didDrawPage:()=>addPdfFooter(doc)});
-    const pgCount=doc.internal.getNumberOfPages();
-    for(let i=1;i<=pgCount;i++){doc.setPage(i);addPdfFooter(doc);}
+    if (!_pdfPeriodOvr) {
+      const modal = document.getElementById('modal-pdf-periodo');
+      if (modal) {
+        modal.classList.add('active');
+        document.querySelectorAll('.pdf-period-opt').forEach((el,i) => { el.classList.toggle('active', i===0); });
+        document.querySelectorAll('input[name="pdf-per"]').forEach((r,i) => r.checked = i===0);
+        document.getElementById('pdf-custom-range').style.display = 'none';
+      }
+      return;
+    }
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF();
+    const datos = JSON.parse(localStorage.getItem('sut_pacientes') || '[]');
+    const desde = _pdfPeriodOvr.desde;
+    const hasta  = _pdfPeriodOvr.hasta;
+    const _pdfLabel = _pdfPeriodOvr.label;
+    _pdfPeriodOvr = null;
+    const uFiltro = document.getElementById('est-filtro-usuario')?.value || '';
+    const uNombre = uFiltro ? getUsuarios().find(u => u.id === uFiltro)?.nombre : '';
+
+    const per = datos.filter(p => {
+      if (!p.fecha) return false;
+      const f = new Date(p.fecha);
+      if (f < desde || f > hasta) return false;
+      if (uFiltro && p.usuarioId !== uFiltro) return false;
+      return true;
+    });
+
+    const total = per.length;
+    const mods  = per.filter(p => p.override).length;
+    const sub   = per.filter(p => p.override && p.nivel < p.nivelSugerido).length;
+    const baj   = per.filter(p => p.override && p.nivel > p.nivelSugerido).length;
+    const cF = [0,0,0,0,0,0];
+    per.forEach(p => { if (p.nivel >= 1 && p.nivel <= 5) cF[p.nivel]++; });
+
+    const NM = ['','Emergencia','Urgencia No Diferible','Urgencia Diferible','No Programable','Programable'];
+    // Colores de nivel como RGB
+    const NF = {1:[214,40,40], 2:[224,122,21], 3:[232,193,58], 4:[46,158,91], 5:[42,109,181]};
+    const NT = {1:[255,255,255], 2:[255,255,255], 3:[70,50,0], 4:[255,255,255], 5:[255,255,255]};
+    const NB = {1:[250,229,229], 2:[254,241,226], 3:[254,250,227], 4:[227,245,236], 5:[227,238,249]};
+
+    // ── ENCABEZADO ────────────────────────────────────────────────
+    const cfg = getCentroInfo();
+    doc.setFontSize(15); doc.setFont('helvetica','bold'); doc.setTextColor(30,70,140);
+    doc.text('SUT — Sistema Uruguayo de Triage', 14, 15);
+    doc.setFontSize(9.5); doc.setFont('helvetica','normal'); doc.setTextColor(90);
+    doc.text('Informe Estadístico', 14, 22);
+    let y = 28;
+    doc.setFontSize(8.5);
+    if (cfg && cfg.centro) {
+      doc.text(cfg.centro+(cfg.ciudad?' · '+cfg.ciudad:'')+(cfg.depto?' — Dpto. '+cfg.depto:''), 14, y);
+      y += 5;
+    }
+    const genUser = typeof usuarioActivo !== 'undefined' && usuarioActivo ? ' · Usuario: '+usuarioActivo.nombre : '';
+    doc.text('Generado: '+new Date().toLocaleString('es-UY')+genUser, 14, y); y += 5;
+    doc.text('Período: '+(_pdfLabel||desde.toLocaleDateString('es-UY')+' – '+hasta.toLocaleDateString('es-UY'))+(uNombre?' | Filtro: '+uNombre:''), 14, y); y += 5;
+    doc.setDrawColor(42,109,181); doc.setLineWidth(0.7);
+    doc.line(14, y, 196, y); y += 6;
+    doc.setTextColor(0); doc.setLineWidth(0.2); doc.setDrawColor(0);
+
+    // ── SECCIÓN 1: Resumen por nivel ──────────────────────────────
+    doc.setFontSize(10); doc.setFont('helvetica','bold');
+    doc.text('Resumen por nivel de triage', 14, y); y += 4;
+    doc.autoTable({
+      startY: y,
+      head: [['Nivel','Descripción','Pacientes','% del total']],
+      body: [1,2,3,4,5].map(n => [`N${n}`, NM[n], cF[n], total ? Math.round(cF[n]/total*100)+'%' : '0%']),
+      foot: [['','Total', total, '100%']],
+      styles: { fontSize:9, cellPadding:3 },
+      headStyles: { fillColor:[42,109,181], textColor:255, fontStyle:'bold' },
+      footStyles: { fontStyle:'bold', fillColor:[230,235,245] },
+      columnStyles: { 0:{fontStyle:'bold',cellWidth:18}, 2:{halign:'center',cellWidth:28}, 3:{halign:'center',cellWidth:28} },
+      didParseCell(data) {
+        if (data.section === 'body') {
+          const n = data.row.index + 1;
+          data.cell.styles.fillColor = NB[n];
+          data.cell.styles.textColor = NF[n];
+          if (data.column.index === 0) { data.cell.styles.fillColor = NF[n]; data.cell.styles.textColor = NT[n]; }
+        }
+      },
+      didDrawPage: () => addPdfFooter(doc),
+    });
+    y = doc.lastAutoTable.finalY + 8;
+
+    // ── SECCIÓN 2: Tiempos objetivo SUT por nivel ─────────────────
+    if (y > 232) { doc.addPage(); y = 20; }
+    doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(0);
+    doc.text('Tiempos objetivo SUT por nivel', 14, y); y += 4;
+    doc.autoTable({
+      startY: y,
+      head: [['Nivel','Descripción','Tiempo máximo SUT','Casos en período']],
+      body: [
+        ['N1','Emergencia',            'Atención inmediata (0 min)', cF[1]],
+        ['N2','Urgencia No Diferible', 'Máximo 5 minutos',          cF[2]],
+        ['N3','Urgencia Diferible',    'Máximo 30 minutos',          cF[3]],
+        ['N4','No Programable',        'Máximo 120 minutos',         cF[4]],
+        ['N5','Programable',           'Más de 120 minutos',         cF[5]],
+      ],
+      styles: { fontSize:9, cellPadding:3 },
+      headStyles: { fillColor:[42,109,181], textColor:255, fontStyle:'bold' },
+      alternateRowStyles: { fillColor:[245,245,250] },
+      columnStyles: { 0:{fontStyle:'bold',cellWidth:18}, 3:{halign:'center',cellWidth:30} },
+      didParseCell(data) {
+        if (data.section === 'body' && data.column.index === 0) {
+          const n = data.row.index + 1;
+          data.cell.styles.fillColor = NF[n];
+          data.cell.styles.textColor = NT[n];
+        }
+      },
+      didDrawPage: () => addPdfFooter(doc),
+    });
+    y = doc.lastAutoTable.finalY + 8;
+
+    // ── SECCIÓN 3: Indicadores de calidad ─────────────────────────
+    if (y > 225) { doc.addPage(); y = 20; }
+    doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(0);
+    doc.text('Indicadores de calidad', 14, y); y += 4;
+    doc.autoTable({
+      startY: y,
+      head: [['Indicador','Valor','Detalle']],
+      body: [
+        ['Total de clasificaciones', total, 'En el período seleccionado'],
+        ['Modificadas por profesional', `${mods} (${total?Math.round(mods/total*100):0}%)`, 'Nivel ajustado por criterio clínico'],
+        ['Subidas de urgencia', sub, 'Profesional asignó mayor urgencia que el sistema'],
+        ['Bajadas de urgencia', baj, 'Profesional asignó menor urgencia que el sistema'],
+      ],
+      styles: { fontSize:9, cellPadding:3 },
+      headStyles: { fillColor:[42,109,181], textColor:255, fontStyle:'bold' },
+      alternateRowStyles: { fillColor:[245,245,250] },
+      columnStyles: { 1:{halign:'center',cellWidth:35,fontStyle:'bold'} },
+      didDrawPage: () => addPdfFooter(doc),
+    });
+    y = doc.lastAutoTable.finalY + 8;
+
+    // ── SECCIÓN 4: Estadísticas por turno (si hay datos) ──────────
+    if (total > 0) {
+      const TR = [
+        { label:'Mañana (06-14 h)', h1:6,  h2:14 },
+        { label:'Tarde (14-22 h)',       h1:14, h2:22 },
+        { label:'Noche (22-06 h)',       h1:22, h2:6  },
+      ];
+      const td = TR.map(t => {
+        const pac = per.filter(p => {
+          if (!p.fecha) return false;
+          const h = new Date(p.fecha).getHours();
+          return t.h1 < t.h2 ? (h >= t.h1 && h < t.h2) : (h >= t.h1 || h < t.h2);
+        });
+        const cnt = [0,0,0,0,0,0];
+        pac.forEach(p => { if (p.nivel >= 1 && p.nivel <= 5) cnt[p.nivel]++; });
+        return { label: t.label, total: pac.length, cnt };
+      });
+      if (td.some(t => t.total > 0)) {
+        if (y > 225) { doc.addPage(); y = 20; }
+        doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(0);
+        doc.text('Estadísticas por turno', 14, y); y += 4;
+        doc.autoTable({
+          startY: y,
+          head: [['Turno','Total','N1','N2','N3','N4','N5','N1+N2 urgentes']],
+          body: td.map(t => [
+            t.label, t.total,
+            t.cnt[1], t.cnt[2], t.cnt[3], t.cnt[4], t.cnt[5],
+            t.total ? `${t.cnt[1]+t.cnt[2]} (${Math.round((t.cnt[1]+t.cnt[2])/t.total*100)}%)` : '0',
+          ]),
+          styles: { fontSize:9, cellPadding:2.5 },
+          headStyles: { fillColor:[42,109,181], textColor:255, fontStyle:'bold' },
+          alternateRowStyles: { fillColor:[245,245,250] },
+          columnStyles: {
+            0:{cellWidth:40},
+            1:{halign:'center',cellWidth:16},
+            2:{halign:'center',cellWidth:14},
+            3:{halign:'center',cellWidth:14},
+            4:{halign:'center',cellWidth:14},
+            5:{halign:'center',cellWidth:14},
+            6:{halign:'center',cellWidth:14},
+            7:{halign:'center'},
+          },
+          didParseCell(data) {
+            if (data.section === 'body') {
+              const colToNivel = {2:1, 3:2, 4:3, 5:4, 6:5};
+              const n = colToNivel[data.column.index];
+              if (n) { data.cell.styles.textColor = NF[n]; }
+            }
+          },
+          didDrawPage: () => addPdfFooter(doc),
+        });
+      }
+    }
+
+    // ─── SECCIÓN: TIEMPOS DE ASISTENCIA ──────────────────────────
+    const perAsist = per.filter(p => p.asistidoEn && p.fecha);
+    if (perAsist.length > 0) {
+      const tSUT = getSutTiempos();
+      doc.addPage(); let yA = 20;
+      doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.setTextColor(42,109,181);
+      doc.text('Tiempos de Asistencia', 14, yA); yA += 5;
+      doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(100,100,100);
+      doc.text(`${perAsist.length} paciente${perAsist.length!==1?'s':''} asistidos en el período`, 14, yA); yA += 7;
+
+      const asistStatsData = [], asistStatsLvl = [];
+      [1,2,3,4,5].forEach(n => {
+        const pacs = perAsist.filter(p => p.nivel === n);
+        if (!pacs.length) return;
+        const mins = pacs.map(p => Math.floor((new Date(p.asistidoEn)-new Date(p.fecha))/60000));
+        const max = tSUT[n]||0;
+        const dentro = mins.filter(m => max===0?m===0:m<=max).length;
+        const prom = Math.round(mins.reduce((a,b)=>a+b,0)/mins.length);
+        asistStatsData.push([`N${n} — ${NM[n]}`, pacs.length, `${prom} min`, max===0?'Inmediato':`${max} min`, `${dentro}/${pacs.length}`, `${Math.round(dentro/pacs.length*100)}%`]);
+        asistStatsLvl.push(n);
+      });
+
+      doc.autoTable({
+        startY: yA,
+        head: [['Nivel','Asistidos','Promedio','Máx. SUT','Dentro/Total','% Cumplim.']],
+        body: asistStatsData,
+        styles: { fontSize: 8.5, cellPadding: 2.5 },
+        headStyles: { fillColor:[42,109,181], textColor:255, fontStyle:'bold' },
+        alternateRowStyles: { fillColor:[245,245,250] },
+        columnStyles: { 0:{cellWidth:56}, 1:{halign:'center'}, 2:{halign:'center'}, 3:{halign:'center'}, 4:{halign:'center'}, 5:{halign:'center',fontStyle:'bold'} },
+        didParseCell(data) {
+          if (data.section==='body') {
+            const n = asistStatsLvl[data.row.index];
+            if (data.column.index===0 && n && NB[n]) { data.cell.styles.fillColor=NB[n]; data.cell.styles.textColor=NF[n]; }
+            if (data.column.index===5) {
+              const pct = parseInt(data.cell.raw);
+              if (!isNaN(pct)) data.cell.styles.textColor = pct>=80?[40,140,80]:pct>=50?[160,100,0]:[200,30,30];
+            }
+          }
+        },
+        didDrawPage: () => addPdfFooter(doc),
+      });
+
+      let yD = doc.lastAutoTable.finalY + 8;
+      if (yD > 220) { doc.addPage(); yD = 20; }
+      doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(0);
+      doc.text('Detalle por paciente', 14, yD); yD += 4;
+      const fmtHP = d => new Date(d).toLocaleTimeString('es-UY',{hour:'2-digit',minute:'2-digit'});
+
+      doc.autoTable({
+        startY: yD,
+        head: [['Código','Nivel','Hora triage','Hora asistencia','Tiempo','Cumplimiento']],
+        body: perAsist.slice().sort((a,b)=>new Date(a.fecha)-new Date(b.fecha)).map(p => {
+          const min = Math.floor((new Date(p.asistidoEn)-new Date(p.fecha))/60000);
+          const max = tSUT[p.nivel]||0;
+          const cumple = max===0?min===0:min<=max;
+          return [p.id||'—', `N${p.nivel} — ${NM[p.nivel]||''}`, fmtHP(p.fecha), fmtHP(p.asistidoEn), `${min} min`, cumple?'✓ Cumple':'✗ Desvío'];
+        }),
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor:[42,109,181], textColor:255, fontStyle:'bold' },
+        alternateRowStyles: { fillColor:[245,245,250] },
+        columnStyles: { 1:{cellWidth:42}, 2:{halign:'center'}, 3:{halign:'center'}, 4:{halign:'center'}, 5:{halign:'center',fontStyle:'bold'} },
+        didParseCell(data) {
+          if (data.section==='body' && data.column.index===5) {
+            data.cell.styles.textColor = data.cell.raw==='✓ Cumple'?[40,140,80]:[200,30,30];
+          }
+        },
+        didDrawPage: () => addPdfFooter(doc),
+      });
+    }
+
+    // ─── SECCIÓN: AMBULANCIAS ─────────────────────────────────────
+    const todasAmb = JSON.parse(localStorage.getItem('sut_ambulancias') || '[]');
+    const ambPer = todasAmb.filter(a => {
+      if (!a.horaAviso) return false;
+      const f = new Date(a.horaAviso);
+      return f >= desde && f <= hasta;
+    });
+    if (ambPer.length > 0) {
+      doc.addPage(); let yAmb = 20;
+      doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.setTextColor(42,109,181);
+      doc.text('Ambulancias en espera', 14, yAmb); yAmb += 5;
+      doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(100,100,100);
+      doc.text(`${ambPer.length} traslado${ambPer.length!==1?'s':''} registrado${ambPer.length!==1?'s':''} en el período`, 14, yAmb); yAmb += 7;
+
+      const aIng = ambPer.filter(a=>a.estado==='ingresado');
+      const aCan = ambPer.filter(a=>a.estado==='cancelado');
+      const tMin = aIng.filter(a=>a.horaIngreso).map(a=>Math.floor((new Date(a.horaIngreso)-new Date(a.horaAviso))/60000));
+      const prom = tMin.length ? Math.round(tMin.reduce((a,b)=>a+b,0)/tMin.length) : null;
+
+      doc.autoTable({
+        startY: yAmb,
+        head: [['Total','Ingresadas','Canceladas','En espera','Espera prom.','Mín.','Máx.']],
+        body: [[
+          ambPer.length, aIng.length, aCan.length,
+          ambPer.length - aIng.length - aCan.length,
+          prom!=null?`${prom} min`:'—',
+          tMin.length?`${Math.min(...tMin)} min`:'—',
+          tMin.length?`${Math.max(...tMin)} min`:'—',
+        ]],
+        styles: { fontSize: 9, cellPadding: 2.5, halign:'center' },
+        headStyles: { fillColor:[42,109,181], textColor:255, fontStyle:'bold' },
+        didDrawPage: () => addPdfFooter(doc),
+      });
+
+      let yAD = doc.lastAutoTable.finalY + 8;
+      if (yAD > 220) { doc.addPage(); yAD = 20; }
+      doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(0);
+      doc.text('Detalle de casos', 14, yAD); yAD += 4;
+      const fHP = d => new Date(d).toLocaleTimeString('es-UY',{hour:'2-digit',minute:'2-digit'});
+
+      doc.autoTable({
+        startY: yAD,
+        head: [['Nombre','Patología','Procedencia','H. aviso','H. ingreso','Espera','Estado']],
+        body: ambPer.slice().sort((a,b)=>new Date(a.horaAviso)-new Date(b.horaAviso)).map(a => {
+          const min = a.horaIngreso?Math.floor((new Date(a.horaIngreso)-new Date(a.horaAviso))/60000):null;
+          return [a.nombre, a.patologia||'—', a.procedencia||'—', fHP(a.horaAviso),
+                  a.horaIngreso?fHP(a.horaIngreso):'—', min!=null?`${min} min`:'—',
+                  a.estado==='ingresado'?'✅ Ingresó':a.estado==='cancelado'?'❌ Cancelado':'⏳ Esperando'];
+        }),
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor:[42,109,181], textColor:255, fontStyle:'bold' },
+        alternateRowStyles: { fillColor:[245,245,250] },
+        columnStyles: { 3:{halign:'center'}, 4:{halign:'center'}, 5:{halign:'center'}, 6:{halign:'center',fontStyle:'bold'} },
+        didParseCell(data) {
+          if (data.section==='body' && data.column.index===6) {
+            data.cell.styles.textColor = data.cell.raw.includes('Ingresó')?[40,140,80]
+              : data.cell.raw.includes('Cancelado')?[200,30,30]:[160,100,0];
+          }
+        },
+        didDrawPage: () => addPdfFooter(doc),
+      });
+    }
+
+    const pgCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pgCount; i++) { doc.setPage(i); addPdfFooter(doc); }
     doc.save(`sut-estadisticas-${new Date().toISOString().split('T')[0]}.pdf`);
   }
 
@@ -2842,22 +3557,128 @@
     renderListaUsuarios();
   }
 
-  function descargarRespaldo() {
+  function abrirCambioUsuario() {
+    document.getElementById('cambio-usr-cedula').value='';
+    document.getElementById('cambio-usr-error').textContent='';
+    document.getElementById('cambio-usr-ok').style.display='none';
+    document.getElementById('cambio-usr-btns').style.display='flex';
+    document.getElementById('modal-cambio-usuario').classList.add('active');
+    setTimeout(()=>document.getElementById('cambio-usr-cedula').focus(), 80);
+  }
+
+  function cancelarCambioUsuario() {
+    document.getElementById('modal-cambio-usuario').classList.remove('active');
+  }
+
+  function confirmarCambioUsuario() {
+    const inp   = document.getElementById('cambio-usr-cedula');
+    const errEl = document.getElementById('cambio-usr-error');
+    const okEl  = document.getElementById('cambio-usr-ok');
+    const cedula = inp.value.replace(/\D/g,'');
+
+    function mostrarError(msg) {
+      errEl.textContent=msg; okEl.style.display='none';
+      inp.classList.add('error'); setTimeout(()=>inp.classList.remove('error'),400);
+    }
+
+    if (!cedula || cedula.length < 6) { mostrarError('La cédula debe tener al menos 6 dígitos'); return; }
+
+    const bCedula = btoa(cedula);
+    const user = getUsuarios().find(u => {
+      if (u.activo===false || !u.cedula) return false;
+      let stored = u.cedula;
+      try { stored = btoa(atob(u.cedula).replace(/\D/g,'')); } catch(e) {}
+      return bCedula === stored;
+    });
+
+    if (!user) { mostrarError('Usuario no encontrado'); inp.value=''; inp.focus(); return; }
+    if (user.id === usuarioActivo?.id) { mostrarError('Ya estás ingresado como '+user.nombre.split(' ')[0]); inp.value=''; return; }
+
+    const anterior = usuarioActivo;
+    _registrarCambioLog(anterior, user);
+
+    usuarioActivo = user;
+    const av = document.getElementById('huser-av');
+    if (av) { av.textContent=inicialesNombre(user.nombre); av.style.background=colorPorRol(user.rol); }
+    document.getElementById('huser-nombre').textContent = user.nombre.split(' ')[0];
+    document.getElementById('huser-rol').textContent    = labelRol(user.rol);
+
+    errEl.textContent='';
+    okEl.textContent='✓ Usuario cambiado a '+user.nombre.split(' ')[0];
+    okEl.style.display='block';
+    document.getElementById('cambio-usr-btns').style.display='none';
+    setTimeout(()=>document.getElementById('modal-cambio-usuario').classList.remove('active'), 1000);
+  }
+
+  function _registrarCambioLog(anterior, nuevo) {
     try {
-      const backup = {
-        fecha: new Date().toISOString(),
-        pacientes: JSON.parse(localStorage.getItem('sut_pacientes')||'[]'),
-        usuarios: JSON.parse(localStorage.getItem('sut_usuarios')||'[]'),
-        sesiones: JSON.parse(localStorage.getItem('sut_sesiones')||'[]'),
-        config: JSON.parse(localStorage.getItem('sut_config')||'{}'),
-      };
-      const blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'sut-respaldo-' + new Date().toISOString().split('T')[0] + '.json';
-      a.click();
-      URL.revokeObjectURL(a.href);
-    } catch(e) { /* user may have blocked downloads — silent fail */ }
+      const log = JSON.parse(localStorage.getItem('sut_log_cambios')||'[]');
+      log.push({ ts:new Date().toISOString(), anteriorId:anterior?.id, anteriorNombre:anterior?.nombre||'—', nuevoId:nuevo.id, nuevoNombre:nuevo.nombre });
+      localStorage.setItem('sut_log_cambios', JSON.stringify(log));
+    } catch(e) {}
+  }
+
+  function descargarRespaldo() {
+    if (!window.jspdf) return;
+    try {
+      const {jsPDF} = window.jspdf;
+      const doc = new jsPDF();
+      const now = new Date();
+      const pacientes = JSON.parse(localStorage.getItem('sut_pacientes')||'[]');
+
+      let y = pdfHeader(doc, 'Cierre de Sesión',
+        'Fecha: '+now.toLocaleDateString('es-UY')+' · Hora: '+now.toLocaleTimeString('es-UY',{hour:'2-digit',minute:'2-digit'}));
+
+      if (sesionActiva) {
+        const durMin = Math.max(0, Math.round((now.getTime()-new Date(sesionActiva.apertura).getTime())/60000));
+        const fmtDT = d => new Date(d).toLocaleString('es-UY',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+        doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(30);
+        doc.text('Datos de la sesión', 14, y); y += 4;
+        doc.autoTable({
+          startY: y,
+          head:[['Campo','Valor']],
+          body:[
+            ['Usuario', sesionActiva.usuarioNombre||'—'],
+            ['Rol', labelRol(sesionActiva.usuarioRol)],
+            ['Apertura', fmtDT(sesionActiva.apertura)],
+            ['Cierre', fmtDT(now.toISOString())],
+            ['Duración', durMin+' min'],
+          ],
+          styles:{fontSize:9,cellPadding:2.5},
+          headStyles:{fillColor:[42,109,181],textColor:255,fontStyle:'bold'},
+          columnStyles:{0:{fontStyle:'bold',cellWidth:45}},
+        });
+        y = doc.lastAutoTable.finalY + 8;
+      }
+
+      const misPac = sesionActiva
+        ? pacientes.filter(p => p.usuarioId===sesionActiva.usuarioId && p.fecha && new Date(p.fecha)>=new Date(sesionActiva.apertura))
+        : [];
+
+      doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(30);
+      doc.text('Clasificaciones en esta sesión: '+misPac.length, 14, y); y += 5;
+
+      if (misPac.length) {
+        const fmtH = d => new Date(d).toLocaleTimeString('es-UY',{hour:'2-digit',minute:'2-digit'});
+        doc.autoTable({
+          startY: y,
+          head:[['Hora','Código','Nivel','Motivo','Asistido']],
+          body: misPac.map(p => [
+            fmtH(p.fecha), p.id||'—', 'N'+(p.nivel||'—'),
+            MOTIVOS_MAP[p.motivo]||p.motivo||'—',
+            p.asistidoEn?('✓ '+fmtH(p.asistidoEn)):'—'
+          ]),
+          styles:{fontSize:8,cellPadding:2},
+          headStyles:{fillColor:[42,109,181],textColor:255,fontStyle:'bold'},
+          alternateRowStyles:{fillColor:[245,245,250]},
+        });
+      } else {
+        doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(120);
+        doc.text('Sin clasificaciones en esta sesión.', 14, y);
+      }
+
+      doc.save('sut-cierre-'+now.toISOString().split('T')[0]+'.pdf');
+    } catch(e) { /* silent fail */ }
   }
 
   // ─── TOGGLE CONTRASEÑA ──────────────────────────────────────
@@ -2900,7 +3721,9 @@
     if (tab==='usuarios')      renderCfgUsuarios(body);
     if (tab==='institucional') renderCfgInstitucional(body);
     if (tab==='sesiones')      renderCfgSesiones(body);
-    if (tab==='auditoria')     renderCfgAuditoria(body);
+    if (tab==='auditoria')       renderCfgAuditoria(body);
+    if (tab==='tiempos')         renderCfgTiempos(body);
+    if (tab==='ambulancias_audit') renderCfgAmbulanciaAuditoria(body);
   }
 
   function renderCfgUsuarios(body) {
@@ -2984,30 +3807,69 @@
   }
 
   function renderCfgSesiones(body) {
-    const [desde,hasta]=getEstFechas();
     const ss=getSesiones();
     const fmtDT=d=>d?new Date(d).toLocaleString('es-UY',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}):'Activa';
-    const rows=ss.map(s=>`<tr>
+    const rows=ss.slice().reverse().map(s=>`<tr>
       <td style="font-weight:500">${s.usuarioNombre||'—'}</td>
       <td style="color:var(--text-muted);font-size:0.72rem">${labelRol(s.usuarioRol)}</td>
       <td style="font-family:var(--font-mono);font-size:0.74rem">${fmtDT(s.apertura)}</td>
       <td style="font-family:var(--font-mono);font-size:0.74rem">${fmtDT(s.bloqueo)}</td>
       <td>${s.duracionMin!=null?s.duracionMin+' min':'—'}</td>
+      <td><button class="btn-del" title="Eliminar sesión" onclick="eliminarSesion('${s.id}')">🗑️</button></td>
     </tr>`).join('');
     body.innerHTML=`
       <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.9rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.9rem;flex-wrap:wrap;gap:0.5rem">
           <h3 style="margin:0">${ss.length} sesiones registradas</h3>
-          <button class="btn-action" onclick="exportarSesionesAdminPDF()">⬇ Exportar PDF</button>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+            <button class="btn-action" onclick="abrirModalPDFAdmin('sesiones')">📄 Exportar Sesiones PDF</button>
+            <button class="btn-del" style="font-size:0.78rem;padding:0.3rem 0.7rem" onclick="eliminarTodasSesiones()">🗑️ Eliminar todas</button>
+          </div>
         </div>
-        ${ss.length?`<div class="pac-table-wrap"><table class="ses-table"><thead><tr><th>Usuario</th><th>Rol</th><th>Apertura</th><th>Bloqueo</th><th>Duración</th></tr></thead><tbody>${rows}</tbody></table></div>`:'<p class="aa-empty">Sin sesiones registradas.</p>'}
+        <div class="card" style="margin:0 0 0.85rem;background:var(--bg3);padding:0.7rem 0.85rem">
+          <div style="font-size:0.8rem;font-weight:700;margin-bottom:0.5rem">Eliminar por rango de fechas</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:0.5rem;align-items:end">
+            <div class="vital-field" style="margin:0"><label style="font-size:0.75rem">Desde</label><input type="date" id="ses-rng-desde" class="pac-date-in"></div>
+            <div class="vital-field" style="margin:0"><label style="font-size:0.75rem">Hasta</label><input type="date" id="ses-rng-hasta" class="pac-date-in"></div>
+            <button class="btn-del" style="font-size:0.78rem;padding:0.3rem 0.6rem;height:fit-content" onclick="eliminarSesionesPorRango()">Eliminar rango</button>
+          </div>
+        </div>
+        ${ss.length?`<div class="pac-table-wrap"><table class="ses-table"><thead><tr><th>Usuario</th><th>Rol</th><th>Apertura</th><th>Bloqueo</th><th>Duración</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`:'<p class="aa-empty">Sin sesiones registradas.</p>'}
       </div>`;
+  }
+
+  function eliminarSesion(id) {
+    if (!confirm('¿Eliminar esta sesión del registro?')) return;
+    saveSesiones(getSesiones().filter(s => s.id !== id));
+    showCfgTab('sesiones');
+  }
+
+  function eliminarSesionesPorRango() {
+    const dv = document.getElementById('ses-rng-desde')?.value;
+    const hv = document.getElementById('ses-rng-hasta')?.value;
+    if (!dv || !hv) { alert('Seleccioná fecha de inicio y fin.'); return; }
+    const d0 = new Date(dv+'T00:00:00'), d1 = new Date(hv+'T23:59:59');
+    const ss = getSesiones();
+    const aElim = ss.filter(s => { if (!s.apertura) return false; const f=new Date(s.apertura); return f>=d0 && f<=d1; });
+    if (!aElim.length) { alert('No hay sesiones en ese rango.'); return; }
+    if (!confirm(`¿Eliminar ${aElim.length} sesión${aElim.length!==1?'es':''} del rango seleccionado?`)) return;
+    saveSesiones(ss.filter(s => { if (!s.apertura) return true; const f=new Date(s.apertura); return f<d0 || f>d1; }));
+    showCfgTab('sesiones');
+  }
+
+  function eliminarTodasSesiones() {
+    const ss = getSesiones();
+    if (!ss.length) { alert('No hay sesiones registradas.'); return; }
+    if (!confirm(`¿Eliminar todas las ${ss.length} sesiones registradas? Esta acción no se puede deshacer.`)) return;
+    if (!confirm('Confirmá nuevamente: se eliminarán TODAS las sesiones del historial.')) return;
+    saveSesiones([]);
+    showCfgTab('sesiones');
   }
 
   function renderCfgAuditoria(body) {
     const todos=JSON.parse(localStorage.getItem('sut_pacientes')||'[]');
-    const NM=['','Emergencia','Urgencia ND','Urgencia D','No Prog.','Programable'];
     const fmtDT=d=>d?new Date(d).toLocaleString('es-UY',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+    const hoy=new Date().toISOString().split('T')[0];
     const rows=todos.slice().reverse().map(p=>`<tr>
       <td style="font-size:0.72rem;font-family:var(--font-mono)">${fmtDT(p.fecha)}</td>
       <td style="font-weight:500">${p.usuarioNombre||'—'}</td>
@@ -3019,12 +3881,314 @@
     </tr>`).join('');
     body.innerHTML=`
       <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.9rem">
-          <h3 style="margin:0">${todos.length} clasificaciones</h3>
-          <button class="btn-action" onclick="exportarAuditoriaPDF()">⬇ Exportar PDF</button>
+        <h3 style="margin-bottom:0.9rem">${todos.length} clasificaciones registradas</h3>
+        <div class="card" style="margin:0 0 0.85rem;background:var(--bg3);padding:0.7rem 0.85rem">
+          <div style="font-size:0.8rem;font-weight:700;margin-bottom:0.5rem">Exportar por rango de fechas</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:0.5rem;align-items:end">
+            <div class="vital-field" style="margin:0"><label style="font-size:0.75rem">Desde</label><input type="date" id="aud-rng-desde" class="pac-date-in" value="${hoy}"></div>
+            <div class="vital-field" style="margin:0"><label style="font-size:0.75rem">Hasta</label><input type="date" id="aud-rng-hasta" class="pac-date-in" value="${hoy}"></div>
+            <button class="btn-action" style="height:fit-content" onclick="exportarAuditoriaPDF()">📄 Exportar PDF</button>
+          </div>
         </div>
         ${todos.length?`<div class="pac-table-wrap"><table class="ses-table"><thead><tr><th>Fecha/Hora</th><th>Usuario</th><th>Código</th><th>Motivo</th><th>Sug.</th><th>Final</th><th>Estado</th></tr></thead><tbody>${rows}</tbody></table></div>`:'<p class="aa-empty">Sin clasificaciones.</p>'}
       </div>`;
+  }
+
+  // ─── AUDITORÍA AMBULANCIAS — PANEL ADMIN ─────────────────────
+  let _ambAudPeriodo = 'hoy';
+
+  function renderCfgAmbulanciaAuditoria(body) {
+    body.innerHTML = `
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem">
+          <h3 style="margin:0">🚑 Auditoría de Ambulancias</h3>
+          <button class="btn-action" onclick="abrirModalPDFAdmin('auditoria')">📄 Exportar Auditoría PDF</button>
+        </div>
+        <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.7rem">
+          <button class="btn-sm" id="aaud-btn-hoy"    onclick="_aaudSetPeriodo('hoy')">Hoy</button>
+          <button class="btn-sm" id="aaud-btn-semana" onclick="_aaudSetPeriodo('semana')">Esta semana</button>
+          <button class="btn-sm" id="aaud-btn-mes"    onclick="_aaudSetPeriodo('mes')">Este mes</button>
+          <button class="btn-sm" id="aaud-btn-custom" onclick="_aaudSetPeriodo('custom')">Rango</button>
+        </div>
+        <div id="aaud-custom-range" style="display:none;grid-template-columns:1fr 1fr auto;gap:0.5rem;margin-bottom:0.7rem;align-items:end">
+          <div class="vital-field" style="margin:0"><label style="font-size:0.75rem">Desde</label><input type="date" id="aaud-desde" class="pac-date-in"></div>
+          <div class="vital-field" style="margin:0"><label style="font-size:0.75rem">Hasta</label><input type="date" id="aaud-hasta" class="pac-date-in"></div>
+          <button class="btn-next" style="height:fit-content" onclick="_aaudFiltrar()">Filtrar</button>
+        </div>
+        <div id="aaud-body"></div>
+      </div>`;
+    _aaudFiltrar();
+  }
+
+  function _aaudSetPeriodo(val) {
+    _ambAudPeriodo = val;
+    const cr = document.getElementById('aaud-custom-range');
+    if (cr) cr.style.display = val === 'custom' ? 'grid' : 'none';
+    if (val !== 'custom') _aaudFiltrar();
+  }
+
+  function _aaudFiltrar() {
+    const now = new Date();
+    let desde, hasta = new Date(now);
+    hasta.setHours(23,59,59,999);
+    const val = _ambAudPeriodo;
+    if (val==='hoy') {
+      desde = new Date(now); desde.setHours(0,0,0,0);
+    } else if (val==='semana') {
+      desde = new Date(now);
+      const wd = desde.getDay(); desde.setDate(desde.getDate()-(wd===0?6:wd-1)); desde.setHours(0,0,0,0);
+    } else if (val==='mes') {
+      desde = new Date(now.getFullYear(), now.getMonth(), 1);
+    } else {
+      const dv = (document.getElementById('aaud-desde')||{}).value;
+      const hv = (document.getElementById('aaud-hasta')||{}).value;
+      if (!dv || !hv) { const b=document.getElementById('aaud-body'); if(b) b.innerHTML='<p class="aa-empty">Seleccioná fecha de inicio y fin.</p>'; return; }
+      desde = new Date(dv+'T00:00:00'); hasta = new Date(hv+'T23:59:59');
+    }
+    const todas = JSON.parse(localStorage.getItem('sut_ambulancias')||'[]');
+    const amb = todas.filter(a => { if(!a.horaAviso) return false; const f=new Date(a.horaAviso); return f>=desde&&f<=hasta; });
+    const el = document.getElementById('aaud-body');
+    if (!el) return;
+    // highlight active button
+    document.querySelectorAll('[id^="aaud-btn-"]').forEach(b => {
+      const isAct = b.id === 'aaud-btn-'+val;
+      b.style.fontWeight = isAct ? '700' : '400';
+      b.style.borderColor = isAct ? 'var(--azul)' : '';
+      b.style.color = isAct ? 'var(--azul)' : '';
+    });
+    if (!amb.length) { el.innerHTML='<p class="aa-empty">Sin ambulancias en el período seleccionado.</p>'; return; }
+    const UMBRAL = 60;
+    const fmtH = d => new Date(d).toLocaleTimeString('es-UY',{hour:'2-digit',minute:'2-digit'});
+    const rows = amb.slice().sort((a,b)=>new Date(a.horaAviso)-new Date(b.horaAviso)).map(a => {
+      const min = a.horaIngreso ? Math.floor((new Date(a.horaIngreso)-new Date(a.horaAviso))/60000) : null;
+      const excede = min !== null && min > UMBRAL;
+      const stE = a.estado==='ingresado' ? '<span class="amb-state-badge amb-state-ingresado">✅ Ingresó</span>'
+                : a.estado==='cancelado' ? '<span class="amb-state-badge amb-state-cancelado">❌ Cancelado</span>'
+                : '<span style="color:var(--naranja);font-size:0.71rem">⏳ Esperando</span>';
+      return `<tr style="${excede?'background:rgba(214,40,40,0.06)':''}">
+        <td style="font-weight:500">${a.nombre}</td>
+        <td style="color:var(--text-muted);font-size:0.75rem">${a.patologia||'—'}</td>
+        <td style="color:var(--text-muted);font-size:0.75rem">${a.procedencia||'—'}</td>
+        <td style="font-family:var(--font-mono);font-size:0.75rem;text-align:center">${fmtH(a.horaAviso)}</td>
+        <td style="font-family:var(--font-mono);font-size:0.75rem;text-align:center">${a.horaIngreso?fmtH(a.horaIngreso):'—'}</td>
+        <td style="text-align:center;font-family:var(--font-mono);font-weight:600;color:${excede?'var(--rojo)':'inherit'}">${min!=null?(min+' min'+(excede?' ⚠️':'')):'—'}</td>
+        <td style="text-align:center">${stE}</td>
+      </tr>`;
+    }).join('');
+    el.innerHTML = `
+      <div style="font-size:0.77rem;color:var(--text-muted);margin-bottom:0.45rem">${amb.length} registro${amb.length!==1?'s':''} · <span style="color:var(--rojo)">⚠️ Espera &gt;${UMBRAL} min marcada en rojo</span></div>
+      <div class="pac-table-wrap">
+        <table class="ses-table">
+          <thead><tr><th>Nombre</th><th>Patología</th><th>Procedencia</th><th>Hora aviso</th><th>Hora ingreso</th><th>Espera</th><th>Estado</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }
+
+  // ─── ESTADÍSTICAS DE AMBULANCIAS ────────────────────────────
+  function renderEstadisticasAmbulancias(desde, hasta) {
+    const el = document.getElementById('est-ambulancias-body');
+    if (!el) return;
+    const todas = JSON.parse(localStorage.getItem('sut_ambulancias') || '[]');
+    const amb = todas.filter(a => {
+      if (!a.horaAviso) return false;
+      const f = new Date(a.horaAviso);
+      return f >= desde && f <= hasta;
+    });
+
+    if (!amb.length) {
+      el.innerHTML = '<p class="aa-empty" style="text-align:center;padding:1.5rem 0">Sin ambulancias registradas en el período.</p>';
+      return;
+    }
+
+    const total     = amb.length;
+    const ambIng    = amb.filter(a => a.estado === 'ingresado');
+    const ambCan    = amb.filter(a => a.estado === 'cancelado');
+    const tiemposM  = ambIng.filter(a => a.horaIngreso)
+      .map(a => Math.floor((new Date(a.horaIngreso) - new Date(a.horaAviso)) / 60000));
+    const promEsp   = tiemposM.length ? Math.round(tiemposM.reduce((a,b)=>a+b,0)/tiemposM.length) : null;
+    const minEsp    = tiemposM.length ? Math.min(...tiemposM) : null;
+    const maxEsp    = tiemposM.length ? Math.max(...tiemposM) : null;
+
+    const kpis = [
+      {label:'Total registradas', value:total},
+      {label:'Ingresadas', value:ambIng.length, sub:`${Math.round(ambIng.length/total*100)}%`},
+      {label:'Canceladas',  value:ambCan.length},
+      {label:'Espera prom.', value:promEsp!=null?`${promEsp} min`:'—', sub:minEsp!=null?`Mín ${minEsp} · Máx ${maxEsp} min`:''},
+    ];
+
+    const patCnt = {};
+    amb.forEach(a => { if (a.patologia) { const k=a.patologia.trim().toLowerCase(); patCnt[k]=(patCnt[k]||0)+1; } });
+    const top5 = Object.entries(patCnt).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+    const turnos = [{label:'🌅 Mañana (06–14h)', n:0},{label:'☀️ Tarde (14–22h)', n:0},{label:'🌙 Noche (22–06h)', n:0}];
+    amb.forEach(a => {
+      const h = new Date(a.horaAviso).getHours();
+      if (h>=6&&h<14) turnos[0].n++; else if (h>=14&&h<22) turnos[1].n++; else turnos[2].n++;
+    });
+
+    const fmtH = d => new Date(d).toLocaleTimeString('es-UY',{hour:'2-digit',minute:'2-digit'});
+    const detRows = amb.slice().sort((a,b)=>new Date(a.horaAviso)-new Date(b.horaAviso)).map(a => {
+      const min = a.horaIngreso ? Math.floor((new Date(a.horaIngreso)-new Date(a.horaAviso))/60000) : null;
+      const stE = a.estado==='ingresado'?'<span class="amb-state-badge amb-state-ingresado">✅ Ingresó</span>'
+                : a.estado==='cancelado'?'<span class="amb-state-badge amb-state-cancelado">❌ Cancelado</span>'
+                : '<span style="color:var(--naranja);font-size:0.71rem">⏳ Esperando</span>';
+      return `<tr>
+        <td style="font-weight:500">${a.nombre}</td>
+        <td style="color:var(--text-muted);font-size:0.75rem">${a.patologia||'—'}</td>
+        <td style="color:var(--text-muted);font-size:0.75rem">${a.procedencia||'—'}</td>
+        <td style="font-family:var(--font-mono);font-size:0.75rem;text-align:center">${fmtH(a.horaAviso)}</td>
+        <td style="font-family:var(--font-mono);font-size:0.75rem;text-align:center">${a.horaIngreso?fmtH(a.horaIngreso):'—'}</td>
+        <td style="text-align:center;font-family:var(--font-mono)">${min!=null?min+' min':'—'}</td>
+        <td style="text-align:center">${stE}</td>
+      </tr>`;
+    }).join('');
+
+    el.innerHTML = `
+      <div class="est-kpi-grid" style="margin-bottom:0.9rem">
+        ${kpis.map(k=>`<div class="est-kpi">
+          <div class="est-kpi-label">${k.label}</div>
+          <div class="est-kpi-value">${k.value}</div>
+          ${k.sub?`<div class="est-kpi-sub">${k.sub}</div>`:''}
+        </div>`).join('')}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.9rem">
+        <div>
+          <div style="font-size:0.77rem;font-weight:700;color:var(--text-muted);margin-bottom:0.4rem">Por turno</div>
+          ${turnos.map(t=>`<div style="display:flex;align-items:center;gap:0.5rem;font-size:0.8rem;padding:0.2rem 0">
+            <span style="min-width:130px">${t.label}</span>
+            <span style="font-weight:600">${t.n}</span>
+            <span style="color:var(--text-muted);font-size:0.72rem">${total?Math.round(t.n/total*100):0}%</span>
+          </div>`).join('')}
+        </div>
+        <div>
+          <div style="font-size:0.77rem;font-weight:700;color:var(--text-muted);margin-bottom:0.4rem">Top patologías</div>
+          ${top5.length?top5.map((e,i)=>`<div style="display:flex;align-items:center;gap:0.4rem;font-size:0.8rem;padding:0.2rem 0">
+            <span style="color:var(--text-muted);min-width:14px">${i+1}.</span>
+            <span style="flex:1;text-transform:capitalize">${e[0]}</span>
+            <span style="font-weight:600">${e[1]}</span>
+          </div>`).join(''):'<p style="color:var(--text-muted);font-size:0.78rem">Sin datos</p>'}
+        </div>
+      </div>
+      <details>
+        <summary style="cursor:pointer;font-size:0.84rem;font-weight:600;color:var(--text-muted);padding:0.3rem 0">▶ Detalle de casos (${total})</summary>
+        <div class="pac-table-wrap" style="margin-top:0.45rem">
+          <table class="ses-table">
+            <thead><tr><th>Nombre</th><th>Patología</th><th>Procedencia</th><th>Hora aviso</th><th>Hora ingreso</th><th>Espera</th><th>Estado</th></tr></thead>
+            <tbody>${detRows}</tbody>
+          </table>
+        </div>
+      </details>`;
+  }
+
+  // ─── ESTADÍSTICAS DE TIEMPOS DE ASISTENCIA ──────────────────
+  function renderEstadisticasTiempos(data) {
+    const el = document.getElementById('est-tiempos-asist-body');
+    if (!el) return;
+    const t = getSutTiempos();
+    const asistidos = data.filter(p => p.asistidoEn && p.fecha);
+    const NM = ['','Emergencia','Urgencia ND','Urgencia D','No Prog.','Programable'];
+    const EC = ['','🔴','🟠','🟡','🟢','🔵'];
+
+    if (!asistidos.length) {
+      el.innerHTML = '<p class="aa-empty" style="text-align:center;padding:1.5rem 0">Sin pacientes asistidos en el período seleccionado.</p>';
+      return;
+    }
+
+    const resumenRows = [1,2,3,4,5].map(n => {
+      const pacs = asistidos.filter(p => p.nivel === n);
+      if (!pacs.length) return null;
+      const mins = pacs.map(p => Math.floor((new Date(p.asistidoEn)-new Date(p.fecha))/60000));
+      const maxMin = t[n] || 0;
+      const dentro = mins.filter(m => maxMin===0?m===0:m<=maxMin).length;
+      const prom = Math.round(mins.reduce((a,b)=>a+b,0)/mins.length);
+      const pct = Math.round(dentro/pacs.length*100);
+      const pctColor = pct>=80?'var(--verde)':pct>=50?'#8a6800':'var(--rojo)';
+      return `<tr>
+        <td><span class="nivel-badge nb-${n}">${EC[n]} N${n}</span> ${NM[n]}</td>
+        <td style="text-align:center">${pacs.length}</td>
+        <td style="text-align:center;font-family:var(--font-mono)">${prom} min</td>
+        <td style="text-align:center;color:var(--text-muted)">${maxMin===0?'Inmediato':maxMin+' min'}</td>
+        <td style="text-align:center"><span style="color:var(--verde);font-weight:600">${dentro}</span> / <span style="color:var(--rojo)">${pacs.length-dentro}</span></td>
+        <td style="text-align:center;font-weight:700;color:${pctColor}">${pct}%</td>
+      </tr>`;
+    }).filter(Boolean).join('');
+
+    const fmtH = d => new Date(d).toLocaleTimeString('es-UY',{hour:'2-digit',minute:'2-digit'});
+    const detRows = asistidos.slice().sort((a,b)=>new Date(a.fecha)-new Date(b.fecha)).map(p => {
+      const min = Math.floor((new Date(p.asistidoEn)-new Date(p.fecha))/60000);
+      const maxMin = t[p.nivel]||0;
+      const cumple = maxMin===0?min===0:min<=maxMin;
+      return `<tr>
+        <td>${p.id||'—'}</td>
+        <td><span class="nivel-badge nb-${p.nivel}">${EC[p.nivel]||''} N${p.nivel||'—'}</span></td>
+        <td style="font-family:var(--font-mono);font-size:0.75rem;text-align:center">${fmtH(p.fecha)}</td>
+        <td style="font-family:var(--font-mono);font-size:0.75rem;text-align:center">${fmtH(p.asistidoEn)}</td>
+        <td style="text-align:center;font-family:var(--font-mono)">${min} min</td>
+        <td style="text-align:center;font-weight:700;color:${cumple?'var(--verde)':'var(--rojo)'}">${cumple?'✓ Cumple':'✗ Desvío'}</td>
+      </tr>`;
+    }).join('');
+
+    el.innerHTML = `
+      <div class="pac-table-wrap" style="margin-bottom:1rem">
+        <table class="ses-table">
+          <thead><tr><th>Nivel</th><th>Asistidos</th><th>Promedio</th><th>Máx. SUT</th><th>Dentro / Fuera</th><th>% Cumplimiento</th></tr></thead>
+          <tbody>${resumenRows}</tbody>
+        </table>
+      </div>
+      <details>
+        <summary style="cursor:pointer;font-size:0.84rem;font-weight:600;color:var(--text-muted);padding:0.3rem 0;margin-bottom:0.4rem">▶ Detalle por paciente (${asistidos.length})</summary>
+        <div class="pac-table-wrap" style="margin-top:0.4rem">
+          <table class="ses-table">
+            <thead><tr><th>Código</th><th>Nivel</th><th>Hora triage</th><th>Hora asistencia</th><th>Tiempo total</th><th>Cumplimiento</th></tr></thead>
+            <tbody>${detRows}</tbody>
+          </table>
+        </div>
+      </details>`;
+  }
+
+  // ─── CONFIG TIEMPOS SUT ──────────────────────────────────────
+  function renderCfgTiempos(body) {
+    const t = getSutTiempos();
+    const NM = ['','Emergencia','Urgencia No Diferible','Urgencia Diferible','No Programable','Programable'];
+    const EC = ['','🔴','🟠','🟡','🟢','🔵'];
+    body.innerHTML = `
+      <div class="card">
+        <h3>Tiempos máximos de asistencia por nivel</h3>
+        <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:1rem">
+          Tiempo máximo (en minutos) desde la clasificación hasta la asistencia. 0 = atención inmediata.
+        </p>
+        ${[1,2,3,4,5].map(n=>`
+          <div class="cfg-tiempo-row">
+            <label><span class="nivel-badge nb-${n}">${EC[n]} N${n}</span> ${NM[n]}</label>
+            <div style="display:flex;align-items:center;gap:0.5rem">
+              <input type="number" id="cfg-tiempo-n${n}" class="cfg-tiempo-input" value="${t[n]}" min="0" max="9999" />
+              <span style="color:var(--text-muted);font-size:0.82rem">min</span>
+            </div>
+          </div>`).join('')}
+        <div style="margin-top:1.2rem;display:flex;gap:0.7rem;align-items:center;flex-wrap:wrap">
+          <button class="btn-next" onclick="guardarTiemposSUT()">Guardar cambios</button>
+          <button class="btn-sm" onclick="resetTiemposSUT()">Restaurar valores SUT</button>
+          <span id="cfg-tiempos-ok" style="color:var(--verde);font-size:0.82rem;display:none">✓ Guardado</span>
+        </div>
+      </div>`;
+  }
+
+  function guardarTiemposSUT() {
+    const t = {};
+    [1,2,3,4,5].forEach(n => {
+      const el = document.getElementById(`cfg-tiempo-n${n}`);
+      t[n] = Math.max(0, parseInt(el?.value) || 0);
+    });
+    localStorage.setItem('sut_tiempos_nivel', JSON.stringify(t));
+    const ok = document.getElementById('cfg-tiempos-ok');
+    if (ok) { ok.style.display = 'inline'; setTimeout(() => ok.style.display = 'none', 2200); }
+  }
+
+  function resetTiemposSUT() {
+    if (!confirm('¿Restaurar los tiempos SUT a los valores por defecto?')) return;
+    localStorage.removeItem('sut_tiempos_nivel');
+    showCfgTab('tiempos');
   }
 
   // ─── SESIONES EN ESTADÍSTICAS ────────────────────────────────
@@ -3077,14 +4241,184 @@
 
   function exportarAuditoriaPDF() {
     if (!window.jspdf) { alert('PDF no disponible.'); return; }
+    const dv=(document.getElementById('aud-rng-desde')||{}).value;
+    const hv=(document.getElementById('aud-rng-hasta')||{}).value;
+    if (!dv||!hv) { alert('Seleccioná un rango de fechas.'); return; }
+    const desde=new Date(dv+'T00:00:00'), hasta=new Date(hv+'T23:59:59');
+    const label=new Date(dv).toLocaleDateString('es-UY')+' – '+new Date(hv).toLocaleDateString('es-UY');
     const {jsPDF}=window.jspdf;
     const doc=new jsPDF({orientation:'landscape'});
     const todos=JSON.parse(localStorage.getItem('sut_pacientes')||'[]');
-    const startY=pdfHeader(doc,'Auditoría — Clasificaciones',`Total: ${todos.length} registros`);
+    const filtrados=todos.filter(p=>{ if(!p.fecha) return false; const f=new Date(p.fecha); return f>=desde&&f<=hasta; });
+    const startY=pdfHeader(doc,'Auditoría — Clasificaciones',`Período: ${label} | ${filtrados.length} registro${filtrados.length!==1?'s':''}`);
     const fmtDT=d=>d?new Date(d).toLocaleString('es-UY',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
-    const NM=['','Emergencia','Urgencia No Diferible','Urgencia Diferible','No Programable','Programable'];
-    doc.autoTable({startY,head:[['Fecha/Hora','Usuario','Código','Motivo','Sug.','Final','Modificado']],body:todos.map(p=>[fmtDT(p.fecha),p.usuarioNombre||'—',p.id||'—',MOTIVOS_MAP[p.motivo]||p.motivo||'—',`N${p.nivelSugerido||'—'}`,`N${p.nivel||'—'}`,p.override?'Sí':'No']),styles:{fontSize:7.5,cellPadding:2},headStyles:{fillColor:[42,109,181],textColor:255,fontStyle:'bold'},alternateRowStyles:{fillColor:[245,245,250]}});
-    doc.save(`sut-auditoria-${new Date().toISOString().split('T')[0]}.pdf`);
+    if (!filtrados.length) {
+      doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(120);
+      doc.text('Sin clasificaciones en el período seleccionado.', 14, startY+8);
+    } else {
+      doc.autoTable({startY,head:[['Fecha/Hora','Usuario','Código','Motivo','Sug.','Final','Modificado']],body:filtrados.map(p=>[fmtDT(p.fecha),p.usuarioNombre||'—',p.id||'—',MOTIVOS_MAP[p.motivo]||p.motivo||'—',`N${p.nivelSugerido||'—'}`,`N${p.nivel||'—'}`,p.override?'Sí':'No']),styles:{fontSize:7.5,cellPadding:2},headStyles:{fillColor:[42,109,181],textColor:255,fontStyle:'bold'},alternateRowStyles:{fillColor:[245,245,250]}});
+    }
+    doc.save(`sut-auditoria-${dv}_${hv}.pdf`);
+  }
+
+  // ─── PDFs INDEPENDIENTES DESDE PANEL ADMIN ───────────────────
+  function _generarSesionesAdminPDF(desde, hasta, label) {
+    if (!window.jspdf) { alert('PDF no disponible.'); return; }
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF();
+    const ss = getSesiones().filter(s => { if (!s.apertura) return false; const f=new Date(s.apertura); return f>=desde&&f<=hasta; });
+    const startY = pdfHeader(doc, 'Historial de Sesiones', 'Período: '+label);
+    const fmtDT = d => d ? new Date(d).toLocaleString('es-UY',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : 'Activa';
+    if (!ss.length) {
+      doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(120);
+      doc.text('Sin sesiones en el período seleccionado.', 14, startY+8);
+    } else {
+      doc.autoTable({
+        startY, head:[['Usuario','Rol','Apertura','Bloqueo','Duración']],
+        body: ss.map(s=>[s.usuarioNombre||'—',labelRol(s.usuarioRol),fmtDT(s.apertura),fmtDT(s.bloqueo),s.duracionMin!=null?s.duracionMin+' min':'—']),
+        styles:{fontSize:8,cellPadding:2.5}, headStyles:{fillColor:[42,109,181],textColor:255,fontStyle:'bold'},
+        alternateRowStyles:{fillColor:[245,245,250]}
+      });
+    }
+    doc.setFontSize(7); doc.setTextColor(150);
+    doc.text(`${ss.length} sesión${ss.length!==1?'es':''} | SUT Triage | ${new Date().toLocaleString('es-UY')}`, 14, doc.internal.pageSize.height-8);
+    doc.save(`sut-sesiones-${new Date().toISOString().split('T')[0]}.pdf`);
+  }
+
+  function _generarAuditoriaAdminPDF(desde, hasta, label) {
+    if (!window.jspdf) { alert('PDF no disponible.'); return; }
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF();
+    const NM = ['','Emergencia','Urgencia ND','Urgencia D','No Prog.','Programable'];
+    const t = getSutTiempos();
+
+    let y = pdfHeader(doc, 'Auditoría de Tiempos', 'Período: '+label);
+
+    // ── SECCIÓN 1: Tiempos de asistencia ──────────────────────
+    doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(30);
+    doc.text('1. Tiempos de asistencia (triage → atención)', 14, y); y += 5;
+
+    const pacientes = JSON.parse(localStorage.getItem('sut_pacientes')||'[]');
+    const asistidos = pacientes.filter(p => {
+      if (!p.asistidoEn || !p.fecha) return false;
+      const f = new Date(p.fecha); return f>=desde && f<=hasta;
+    });
+
+    if (!asistidos.length) {
+      doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(120);
+      doc.text('Sin pacientes asistidos en el período.', 14, y); y += 12;
+    } else {
+      const resBody = [1,2,3,4,5].map(n => {
+        const pacs = asistidos.filter(p => p.nivel===n);
+        if (!pacs.length) return null;
+        const mins = pacs.map(p => Math.floor((new Date(p.asistidoEn)-new Date(p.fecha))/60000));
+        const maxMin = t[n]||0;
+        const dentro = mins.filter(m => maxMin===0?m===0:m<=maxMin).length;
+        const prom = Math.round(mins.reduce((a,b)=>a+b,0)/mins.length);
+        const pct = Math.round(dentro/pacs.length*100);
+        return [`N${n} — ${NM[n]}`, pacs.length, `${prom} min`, maxMin===0?'Inmediato':`${maxMin} min`, `${dentro}/${pacs.length}`, `${pct}%`];
+      }).filter(Boolean);
+      doc.autoTable({
+        startY: y,
+        head:[['Nivel','Asistidos','Promedio','Máx. SUT','Cumple','% Cumpl.']],
+        body: resBody,
+        styles:{fontSize:8.5,cellPadding:2.5},
+        headStyles:{fillColor:[42,109,181],textColor:255,fontStyle:'bold'},
+        alternateRowStyles:{fillColor:[245,245,250]},
+        didParseCell: d => {
+          if (d.section==='body' && d.column.index===5) {
+            const pct=parseInt(d.cell.text[0]);
+            d.cell.styles.textColor = pct>=80?[46,158,91]:pct>=50?[160,120,0]:[214,40,40];
+            d.cell.styles.fontStyle='bold';
+          }
+        }
+      });
+      y = doc.lastAutoTable.finalY + 8;
+
+      if (y > 215) { doc.addPage(); y = 18; }
+      doc.setFontSize(8.5); doc.setFont('helvetica','bold'); doc.setTextColor(70);
+      doc.text('Detalle por paciente:', 14, y); y += 4;
+      const fmtH = d => new Date(d).toLocaleTimeString('es-UY',{hour:'2-digit',minute:'2-digit'});
+      doc.autoTable({
+        startY: y,
+        head:[['Código','Nivel','Hora triage','Hora asistencia','Tiempo','Cumplimiento']],
+        body: asistidos.slice().sort((a,b)=>new Date(a.fecha)-new Date(b.fecha)).map(p => {
+          const min = Math.floor((new Date(p.asistidoEn)-new Date(p.fecha))/60000);
+          const maxMin = t[p.nivel]||0;
+          const cumple = maxMin===0?min===0:min<=maxMin;
+          return [p.id||'—', `N${p.nivel||'—'}`, fmtH(p.fecha), fmtH(p.asistidoEn), `${min} min`, cumple?'✓ Cumple':'✗ Desvío'];
+        }),
+        styles:{fontSize:7.5,cellPadding:2},
+        headStyles:{fillColor:[90,90,110],textColor:255,fontStyle:'bold'},
+        alternateRowStyles:{fillColor:[248,248,252]},
+        didParseCell: d => {
+          if (d.section==='body' && d.column.index===5) {
+            d.cell.styles.textColor = d.cell.text[0].startsWith('✓')?[46,158,91]:[214,40,40];
+            d.cell.styles.fontStyle='bold';
+          }
+        }
+      });
+      y = doc.lastAutoTable.finalY + 10;
+    }
+
+    // ── SECCIÓN 2: Ambulancias ────────────────────────────────
+    if (y > 205) { doc.addPage(); y = 18; }
+    doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(30);
+    doc.text('2. Tiempos de espera — Ambulancias', 14, y); y += 5;
+
+    const ambData = JSON.parse(localStorage.getItem('sut_ambulancias')||'[]');
+    const amb = ambData.filter(a => { if(!a.horaAviso) return false; const f=new Date(a.horaAviso); return f>=desde&&f<=hasta; });
+
+    if (!amb.length) {
+      doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(120);
+      doc.text('Sin ambulancias en el período.', 14, y); y += 10;
+    } else {
+      const UMBRAL = 60;
+      const ambIng = amb.filter(a => a.estado==='ingresado' && a.horaIngreso);
+      const tiempos = ambIng.map(a => Math.floor((new Date(a.horaIngreso)-new Date(a.horaAviso))/60000));
+      const prom = tiempos.length ? Math.round(tiempos.reduce((a,b)=>a+b,0)/tiempos.length) : null;
+      const exceden = tiempos.filter(m => m>UMBRAL).length;
+      doc.autoTable({
+        startY: y,
+        head:[['Indicador','Valor','Detalle']],
+        body:[
+          ['Total ambulancias', amb.length, ''],
+          ['Ingresadas al triage', ambIng.length, `${Math.round(ambIng.length/amb.length*100)}%`],
+          ['Canceladas', amb.filter(a=>a.estado==='cancelado').length, ''],
+          ['Tiempo prom. espera', prom!=null?`${prom} min`:'—', ''],
+          [`Exceden ${UMBRAL} min`, exceden, tiempos.length?`${Math.round(exceden/tiempos.length*100)}% de ingresadas`:''],
+        ],
+        styles:{fontSize:8.5,cellPadding:2.5},
+        headStyles:{fillColor:[42,109,181],textColor:255,fontStyle:'bold'},
+        alternateRowStyles:{fillColor:[245,245,250]}
+      });
+      y = doc.lastAutoTable.finalY + 6;
+
+      const fmtH = d => new Date(d).toLocaleTimeString('es-UY',{hour:'2-digit',minute:'2-digit'});
+      doc.autoTable({
+        startY: y,
+        head:[['Nombre','Patología','Procedencia','Aviso','Ingreso','Espera','Estado']],
+        body: amb.slice().sort((a,b)=>new Date(a.horaAviso)-new Date(b.horaAviso)).map(a => {
+          const min = a.horaIngreso ? Math.floor((new Date(a.horaIngreso)-new Date(a.horaAviso))/60000) : null;
+          return [a.nombre, a.patologia||'—', a.procedencia||'—', fmtH(a.horaAviso), a.horaIngreso?fmtH(a.horaIngreso):'—', min!=null?`${min} min`:'—', a.estado==='ingresado'?'Ingresó':a.estado==='cancelado'?'Cancelado':'Esperando'];
+        }),
+        styles:{fontSize:7.5,cellPadding:2},
+        headStyles:{fillColor:[90,90,110],textColor:255,fontStyle:'bold'},
+        alternateRowStyles:{fillColor:[248,248,252]},
+        didParseCell: d => {
+          if (d.section==='body' && d.column.index===5) {
+            const m=parseInt(d.cell.text[0]); if(!isNaN(m)&&m>UMBRAL) d.cell.styles.textColor=[214,40,40];
+          }
+          if (d.section==='body' && d.column.index===6) {
+            if (d.cell.text[0]==='Ingresó') d.cell.styles.textColor=[46,158,91];
+            if (d.cell.text[0]==='Cancelado') d.cell.styles.textColor=[214,40,40];
+          }
+        }
+      });
+    }
+    doc.setFontSize(7); doc.setTextColor(150);
+    doc.text(`SUT Triage | Auditoría de Tiempos | ${new Date().toLocaleString('es-UY')}`, 14, doc.internal.pageSize.height-8);
+    doc.save(`sut-auditoria-tiempos-${new Date().toISOString().split('T')[0]}.pdf`);
   }
 
   // ─── ANÁLISIS POR TURNOS ─────────────────────────────────────
@@ -3318,6 +4652,421 @@
       checkPass();
     }
   });
+
+  // ─── SISTEMA DE ALERTAS CRÍTICAS N1/N2 ──────────────────────
+  (function() {
+    const STORAGE_KEY  = 'sut_alertas_desc';
+    const MAX_AGE_MS   = 24 * 60 * 60 * 1000;
+
+    function _getDesc() {
+      try {
+        const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        const now = Date.now();
+        let changed = false;
+        Object.keys(raw).forEach(k => { if (now - raw[k] > MAX_AGE_MS) { delete raw[k]; changed = true; } });
+        if (changed) localStorage.setItem(STORAGE_KEY, JSON.stringify(raw));
+        return raw;
+      } catch { return {}; }
+    }
+
+    function _marcar(alertId) {
+      const d = _getDesc(); d[alertId] = Date.now();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+    }
+
+    function _descartada(alertId) { return !!_getDesc()[alertId]; }
+
+    let _queue = [];
+
+    function _sonido(nivel) {
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        const ctx = new AC();
+        if (ctx.state === 'suspended') ctx.resume();
+        function beep(freq, dur, vol, delay) {
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.connect(g); g.connect(ctx.destination);
+          o.frequency.value = freq; o.type = 'sine';
+          const t0 = ctx.currentTime + delay;
+          g.gain.setValueAtTime(0, t0);
+          g.gain.linearRampToValueAtTime(vol, t0 + 0.01);
+          g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+          o.start(t0); o.stop(t0 + dur + 0.05);
+        }
+        if (nivel === 1) {
+          beep(880,  0.18, 0.65, 0);
+          beep(880,  0.18, 0.65, 0.22);
+          beep(1100, 0.28, 0.75, 0.44);
+        } else {
+          beep(660, 0.22, 0.55, 0);
+          beep(660, 0.22, 0.55, 0.30);
+        }
+      } catch(e) { /* Web Audio no disponible */ }
+    }
+
+    function _render() {
+      const c = document.getElementById('alerta-critica-container');
+      if (!c) return;
+      _queue = _queue.filter(a => !_descartada(a.alertId));
+      if (!_queue.length) { c.innerHTML = ''; return; }
+      c.innerHTML = _queue.map(a => {
+        const n1  = a.nivel === 1;
+        const cls = n1 ? 'alerta-n1-card' : 'alerta-n2-card';
+        const tit = n1
+          ? '⚠️ EMERGENCIA — ' + a.pacId
+          : '🔔 URGENCIA N2 — ' + a.pacId;
+        const sub = n1
+          ? 'Nivel 1 — Atención inmediata requerida · ' + a.hora
+          : 'Nivel 2 — Atención en máximo 5 minutos · ' + a.hora;
+        return `<div class="alerta-critica ${cls}" role="alert">
+          <div class="alerta-critica-body">
+            <div class="alerta-critica-titulo">${tit}</div>
+            <div class="alerta-critica-sub">${sub}</div>
+          </div>
+          <button class="btn-alerta-ok" onclick="window._alertaOk('${a.alertId}')">✓ Entendido</button>
+        </div>`;
+      }).join('');
+    }
+
+    window._alertaOk = function(alertId) {
+      _marcar(alertId);
+      _queue = _queue.filter(a => a.alertId !== alertId);
+      _render();
+    };
+
+    window.mostrarAlertaCritica = function(reg) {
+      if (reg.nivel !== 1 && reg.nivel !== 2) return;
+      const alertId = reg.fecha || String(Date.now());
+      if (_descartada(alertId)) return;
+      if (_queue.some(a => a.alertId === alertId)) return;
+      const pacId = reg.id && reg.id !== '—' ? reg.id : 'Paciente sin código';
+      const d = reg.fecha ? new Date(reg.fecha) : new Date();
+      const hora = d.toLocaleTimeString('es-UY', {hour:'2-digit', minute:'2-digit'});
+      _queue.unshift({ alertId, nivel: reg.nivel, pacId, hora });
+      _render();
+      _sonido(reg.nivel);
+    };
+  })();
+
+  // ─── TEMPORIZADORES GLOBALES DE PACIENTES ──────────────────────
+  const SUT_TIEMPOS_DEFAULT = {1:0, 2:5, 3:30, 4:120, 5:120};
+
+  function getSutTiempos() {
+    try {
+      const s = JSON.parse(localStorage.getItem('sut_tiempos_nivel') || 'null');
+      if (s && typeof s === 'object')
+        return {1:+s[1]||0, 2:+s[2]||5, 3:+s[3]||30, 4:+s[4]||120, 5:+s[5]||120};
+    } catch {}
+    return {...SUT_TIEMPOS_DEFAULT};
+  }
+
+  function _fmtTimer(sec) {
+    if (sec < 0) sec = 0;
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+
+  (function() {
+    const STORAGE_TV = 'sut_timer_alertas_v';
+    const TV_COOLDOWN = 5 * 60 * 1000; // 5 minutos
+    let _tvQueue = [];
+    let _tvTick = 0;
+
+    const NML = {1:'Emergencia',2:'Urgencia N2',3:'Urgencia N3',4:'No Programable',5:'Programable'};
+    const CLR = {1:'#C82020',2:'#C96A00',3:'#7a5a00',4:'#1a6e3f',5:'#1d5090'};
+    const BDR = {1:'var(--rojo)',2:'var(--naranja)',3:'var(--amarillo)',4:'var(--verde)',5:'var(--azul)'};
+
+    function _sonidoTimer(nivel) {
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        const ctx = new AC();
+        if (ctx.state === 'suspended') ctx.resume();
+        function beep(freq, dur, vol, delay) {
+          const o = ctx.createOscillator(), g = ctx.createGain();
+          o.connect(g); g.connect(ctx.destination);
+          o.frequency.value = freq; o.type = nivel <= 2 ? 'sawtooth' : 'sine';
+          const t0 = ctx.currentTime + delay;
+          g.gain.setValueAtTime(0, t0);
+          g.gain.linearRampToValueAtTime(vol, t0 + 0.01);
+          g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+          o.start(t0); o.stop(t0 + dur + 0.05);
+        }
+        if (nivel <= 2) { beep(440, 0.15, 0.5, 0); beep(550, 0.15, 0.5, 0.20); }
+        else { beep(520, 0.2, 0.3, 0); }
+      } catch(e) {}
+    }
+
+    function _isTVCooldown(fecha) {
+      try {
+        const d = JSON.parse(localStorage.getItem(STORAGE_TV) || '{}');
+        if (d[fecha] && (Date.now() - d[fecha]) < TV_COOLDOWN) return true;
+      } catch {}
+      return false;
+    }
+
+    function _marcarTVAlertada(fecha) {
+      try {
+        const d = JSON.parse(localStorage.getItem(STORAGE_TV) || '{}');
+        d[fecha] = Date.now();
+        const cutoff = Date.now() - 48 * 3600000;
+        Object.keys(d).forEach(k => { if (d[k] < cutoff) delete d[k]; });
+        localStorage.setItem(STORAGE_TV, JSON.stringify(d));
+      } catch {}
+    }
+
+    function _renderTV() {
+      const c = document.getElementById('alerta-timer-container');
+      if (!c) return;
+      if (!_tvQueue.length) { c.innerHTML = ''; return; }
+      c.innerHTML = _tvQueue.map(a => {
+        const elapsed = Math.floor((Date.now() - new Date(a.fecha).getTime()) / 1000);
+        return `<div class="alerta-timer-card" role="alert" style="border-left-color:${BDR[a.nivel]||'var(--rojo)'}">
+          <div class="alerta-timer-body">
+            <div class="alerta-timer-titulo" style="color:${CLR[a.nivel]||'var(--rojo)'}">⏱ TIEMPO VENCIDO — N${a.nivel} ${NML[a.nivel]||''}</div>
+            <div class="alerta-timer-sub">${a.pacId} · Espera: ${_fmtTimer(elapsed)}</div>
+          </div>
+          <button class="btn-timer-ok" onclick="window._tvOk('${a.alertId}')">✓ Entendido</button>
+        </div>`;
+      }).join('');
+    }
+
+    window._tvOk = function(alertId) {
+      _tvQueue = _tvQueue.filter(a => a.alertId !== alertId);
+      _marcarTVAlertada(alertId); // reset cooldown from now → reaparece en 5 min
+      _renderTV();
+    };
+
+    window._marcarAsistido = function(idx) {
+      const todos = JSON.parse(localStorage.getItem('sut_pacientes') || '[]');
+      if (!todos[idx] || todos[idx].asistidoEn) return;
+      const fecha = todos[idx].fecha;
+      todos[idx].asistidoEn = new Date().toISOString();
+      localStorage.setItem('sut_pacientes', JSON.stringify(todos));
+      _tvQueue = _tvQueue.filter(a => a.alertId !== fecha);
+      _renderTV();
+      renderTabla();
+      cargarContadores();
+    };
+
+    function _checkTV(now) {
+      const today = new Date().toDateString();
+      const tiempos = getSutTiempos();
+      let todos;
+      try { todos = JSON.parse(localStorage.getItem('sut_pacientes') || '[]'); } catch { return; }
+      let played = false;
+      todos.forEach(p => {
+        if (p.asistidoEn || !p.fecha || !p.nivel) return;
+        if (new Date(p.fecha).toDateString() !== today) return;
+        if (_isTVCooldown(p.fecha)) return;
+        const sec = Math.floor((now - new Date(p.fecha).getTime()) / 1000);
+        const maxSec = (tiempos[p.nivel] || 0) * 60;
+        if (sec >= maxSec) {
+          _marcarTVAlertada(p.fecha);
+          if (_tvQueue.length < 5 && !_tvQueue.some(a => a.alertId === p.fecha)) {
+            const pacId = p.id && p.id !== '—' ? p.id : 'Sin código';
+            _tvQueue.push({ alertId: p.fecha, nivel: p.nivel, pacId, fecha: p.fecha });
+            if (!played) { _sonidoTimer(p.nivel); played = true; }
+          }
+        }
+      });
+      if (_tvQueue.length) _renderTV();
+    }
+
+    function _tickTimers() {
+      const now = Date.now();
+      const tiempos = getSutTiempos();
+      document.querySelectorAll('.pac-timer[data-fecha]').forEach(el => {
+        const fecha = el.dataset.fecha;
+        const nivel = parseInt(el.dataset.nivel) || 0;
+        if (!fecha || !nivel) return;
+        const sec = Math.floor((now - new Date(fecha).getTime()) / 1000);
+        const maxSec = (tiempos[nivel] || 0) * 60;
+        el.textContent = _fmtTimer(sec);
+        if (maxSec === 0 || sec >= maxSec) {
+          el.className = 'pac-timer pac-timer-rojo';
+        } else if (sec >= maxSec * 0.75) {
+          el.className = 'pac-timer pac-timer-amarillo';
+        } else {
+          el.className = 'pac-timer pac-timer-verde';
+        }
+      });
+      _tvTick++;
+      if (_tvTick % 30 === 0) _checkTV(now); // cada 30s
+      if (_tvQueue.length) _renderTV();
+    }
+
+    setInterval(_tickTimers, 1000);
+    setTimeout(() => _checkTV(Date.now()), 3000);
+  })();
+
+  // ─── MÓDULO AMBULANCIAS ──────────────────────────────────────
+  (function() {
+    const STORAGE_AMB = 'sut_ambulancias';
+
+    function getAmbulancias() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_AMB) || '[]'); } catch { return []; }
+    }
+    function saveAmbulancias(arr) {
+      localStorage.setItem(STORAGE_AMB, JSON.stringify(arr));
+    }
+    function fmtHora(iso) {
+      return new Date(iso).toLocaleTimeString('es-UY', {hour:'2-digit', minute:'2-digit'});
+    }
+    function fmtElapsed(iso) {
+      const sec = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+      if (sec < 60) return `${sec}s`;
+      const m = Math.floor(sec / 60);
+      if (m < 60) return `${m} min`;
+      return `${Math.floor(m/60)}h ${m%60}m`;
+    }
+
+    function actualizarBadge() {
+      const n = getAmbulancias().filter(a => a.estado === 'esperando').length;
+      const b = document.getElementById('amb-badge');
+      if (!b) return;
+      b.textContent = n;
+      b.style.display = n > 0 ? 'flex' : 'none';
+    }
+
+    function renderAmbulancias() {
+      const lista = document.getElementById('amb-lista');
+      const hist  = document.getElementById('amb-historial');
+      if (!lista) return;
+      const arr = getAmbulancias();
+      const esperando  = arr.filter(a => a.estado === 'esperando');
+      const historico  = arr.filter(a => a.estado !== 'esperando').slice().reverse().slice(0, 30);
+
+      lista.innerHTML = esperando.length
+        ? esperando.map(a => `
+          <div class="amb-card">
+            <span style="font-size:1.25rem;flex-shrink:0">🚑</span>
+            <div class="amb-card-info">
+              <div class="amb-card-nombre">${a.nombre}</div>
+              <div class="amb-card-meta">${a.patologia?`<strong>${a.patologia}</strong> · `:''}Aviso: ${fmtHora(a.horaAviso)}${a.procedencia?` · ${a.procedencia}`:''}</div>
+            </div>
+            <div class="amb-card-timer" data-aviso="${a.horaAviso}">—</div>
+            <div class="amb-card-actions">
+              <button class="btn-amb-ok"     onclick="window.ambIngreso(${a.id})">✅ Ingresó</button>
+              <button class="btn-amb-cancel" onclick="window.ambCancelar(${a.id})">❌</button>
+            </div>
+          </div>`).join('')
+        : '<p style="color:var(--text-muted);font-size:0.84rem;text-align:center;padding:1rem 0">No hay ambulancias en espera.</p>';
+
+      if (hist) {
+        hist.innerHTML = historico.length
+          ? historico.map(a => {
+            const cls  = a.estado === 'ingresado' ? 'amb-state-ingresado' : 'amb-state-cancelado';
+            const lbl  = a.estado === 'ingresado' ? '✅ Ingresó' : '❌ Cancelado';
+            const hora = a.estado === 'ingresado' && a.horaIngreso ? ` a las ${fmtHora(a.horaIngreso)}`
+                       : a.horaCancelado ? ` a las ${fmtHora(a.horaCancelado)}` : '';
+            return `<div class="amb-hist-row">
+              <span class="amb-state-badge ${cls}">${lbl}</span>
+              <span style="font-weight:600">${a.nombre}</span>
+              ${a.patologia?`<span style="color:var(--text-muted)">${a.patologia}</span>`:''}
+              <span style="color:var(--text-muted);font-size:0.72rem;margin-left:auto">Aviso ${fmtHora(a.horaAviso)}${hora}</span>
+            </div>`;
+          }).join('')
+          : '<p style="color:var(--text-muted);font-size:0.8rem">Sin registros hoy.</p>';
+      }
+    }
+
+    window.abrirAmbulancias = function() {
+      document.getElementById('modal-ambulancias').classList.add('active');
+      const now = new Date();
+      const ha = document.getElementById('amb-hora-aviso');
+      if (ha && !ha.value)
+        ha.value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+      renderAmbulancias();
+    };
+
+    window.cerrarAmbulancias = function() {
+      document.getElementById('modal-ambulancias').classList.remove('active');
+    };
+
+    window.registrarAmbulancia = function() {
+      const nombre = document.getElementById('amb-nombre').value.trim();
+      if (!nombre) { document.getElementById('amb-nombre').focus(); return; }
+      const patologia    = document.getElementById('amb-patologia').value.trim();
+      const horaAviso    = document.getElementById('amb-hora-aviso').value;
+      const procedencia  = document.getElementById('amb-procedencia').value.trim();
+      const today        = new Date().toLocaleDateString('sv-SE');
+      const isoAviso     = horaAviso ? new Date(`${today}T${horaAviso}`).toISOString() : new Date().toISOString();
+
+      const arr = getAmbulancias();
+      arr.push({ id: Date.now(), nombre, patologia, horaAviso: isoAviso, procedencia,
+                 estado: 'esperando', horaIngreso: null, horaCancelado: null });
+      saveAmbulancias(arr);
+
+      ['amb-nombre','amb-patologia','amb-procedencia'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = '';
+      });
+      const ha = document.getElementById('amb-hora-aviso');
+      if (ha) {
+        const n = new Date();
+        ha.value = `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+      }
+      renderAmbulancias();
+      actualizarBadge();
+      document.getElementById('amb-nombre').focus();
+    };
+
+    window.ambIngreso = function(id) {
+      const arr = getAmbulancias();
+      const amb = arr.find(a => a.id === id);
+      if (!amb || amb.estado !== 'esperando') return;
+      amb.estado = 'ingresado';
+      amb.horaIngreso = new Date().toISOString();
+      saveAmbulancias(arr);
+      renderAmbulancias();
+      actualizarBadge();
+
+      // Cerrar panel, ir a Clasificar, pre-llenar datos
+      window.cerrarAmbulancias();
+      const panels = document.querySelectorAll('.tab-panel');
+      const navBtns = document.querySelectorAll('.nav-tab');
+      panels.forEach(p => p.classList.remove('active'));
+      navBtns.forEach(b => b.classList.remove('active'));
+      const clfTab = document.getElementById('tab-clasificar');
+      if (clfTab) clfTab.classList.add('active');
+      navBtns.forEach(b => { if (b.textContent.includes('Clasificar')) b.classList.add('active'); });
+
+      const idEl = document.getElementById('clf-id');
+      if (idEl) idEl.value = amb.nombre;
+      const motEl = document.getElementById('clf-motivo-txt');
+      if (motEl && amb.patologia) motEl.value = amb.patologia;
+      if (idEl) idEl.focus();
+    };
+
+    window.ambCancelar = function(id) {
+      if (!confirm('¿Marcar esta ambulancia como cancelada / no llegó?')) return;
+      const arr = getAmbulancias();
+      const amb = arr.find(a => a.id === id);
+      if (!amb) return;
+      amb.estado = 'cancelado';
+      amb.horaCancelado = new Date().toISOString();
+      saveAmbulancias(arr);
+      renderAmbulancias();
+      actualizarBadge();
+    };
+
+    function tickAmb() {
+      actualizarBadge();
+      document.querySelectorAll('.amb-card-timer[data-aviso]').forEach(el => {
+        el.textContent = fmtElapsed(el.dataset.aviso);
+      });
+    }
+
+    setInterval(tickAmb, 1000);
+    setTimeout(actualizarBadge, 600);
+  })();
 </script>
+<div id="alerta-critica-container" aria-live="assertive" aria-atomic="false"></div>
+<div id="alerta-timer-container" aria-live="polite" aria-atomic="false"></div>
 </body>
 </html>
