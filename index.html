@@ -5055,6 +5055,12 @@
       const es = document.getElementById('amb-estado-llegar'); if (es) es.selectedIndex = 0;
       const b = document.getElementById('btn-reg-amb'); if (b) b.textContent = '✓ Confirmar llegada';
       _abrirAmbBase();
+      // Pre-completar nombre y patología desde el formulario principal (hora/procedencia quedan libres)
+      const src = document.getElementById('clf-id');
+      const nm = document.getElementById('amb-nombre'); if (nm) nm.value = src ? src.value.trim() : '';
+      const msel = document.getElementById('clf-motivo-sel');
+      const motTxt = (msel && msel.value) ? ((msel.selectedOptions[0] && msel.selectedOptions[0].text) || msel.value) : '';
+      const pat = document.getElementById('amb-patologia'); if (pat) pat.value = motTxt;
       const n = document.getElementById('amb-nombre'); if (n) n.focus();
     };
 
