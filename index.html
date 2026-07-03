@@ -1262,6 +1262,9 @@
     <button class="nav-tab" onclick="showTab('estadisticas', this)">
       📈 Estadísticas
     </button>
+    <button class="nav-tab" onclick="showTab('saote', this); saoteRender()">
+      📡 SAOTE
+    </button>
     <button class="nav-tab" onclick="showTab('bibliografia', this)">
       📚 Bibliografía
     </button>
@@ -1852,7 +1855,87 @@
 
     </div>
 
+    <!-- TAB: SAOTE -->
+    <div id="tab-saote" class="tab-panel">
+      <h2 style="font-size:1.3rem;margin-bottom:0.35rem;">📡 SAOTE</h2>
+      <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1.2rem;">Sistema de Apoyo al Operador Telefónico de Emergencias</p>
+
+      <button id="saote-nueva-btn" class="btn-next" style="font-size:1rem;padding:0.9rem 1.4rem;margin-bottom:1.4rem" onclick="saoteNueva()">📞 Nueva llamada</button>
+
+      <!-- FORMULARIO -->
+      <div id="saote-form" style="display:none">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.6rem;margin-bottom:1rem">
+            <h3 style="margin:0">Registro de llamada</h3>
+            <div style="font-size:0.85rem;color:var(--text-muted)">🕐 Inicio: <strong id="saote-inicio-txt" style="color:var(--text)">—</strong> · ⏱ <span id="saote-dur-txt">00:00</span></div>
+          </div>
+
+          <div style="font-size:0.76rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin:0.4rem 0 0.6rem">Datos básicos</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.8rem">
+            <div class="vital-field"><label>Nombre del llamante</label><input type="text" id="sq-llamante" autocomplete="off" placeholder="Nombre" /></div>
+            <div class="vital-field"><label>Teléfono de contacto</label><input type="text" id="sq-telefono" autocomplete="off" placeholder="Teléfono" /></div>
+            <div class="vital-field"><label>Dirección / ubicación <span style="color:var(--rojo)">*</span></label><input type="text" id="sq-direccion" autocomplete="off" placeholder="Calle, número, referencias" /></div>
+            <div class="vital-field"><label>N.º de personas afectadas</label><input type="number" id="sq-personas" min="1" value="1" /></div>
+          </div>
+
+          <div style="font-size:0.76rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin:1.1rem 0 0.6rem">Motivo de llamada <span style="color:var(--rojo)">*</span></div>
+          <div class="vital-field" style="max-width:420px">
+            <select id="sq-motivo" style="width:100%" onchange="saoteMotivo()">
+              <option value="">— Seleccioná el motivo —</option>
+              <option value="PCR">Paro cardíaco/PCR</option>
+              <option value="Disnea">Dificultad respiratoria</option>
+              <option value="DolorTorax">Dolor torácico</option>
+              <option value="ACV">ACV/Déficit neurológico</option>
+              <option value="Trauma">Trauma/Accidente</option>
+              <option value="Inconsciente">Inconsciente</option>
+              <option value="Convulsiones">Convulsiones</option>
+              <option value="Hemorragia">Hemorragia</option>
+              <option value="Intoxicacion">Intoxicación/Sobredosis</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+
+          <!-- Preguntas protocolizadas -->
+          <div id="saote-preguntas-wrap" style="display:none">
+            <div style="font-size:0.76rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin:1.1rem 0 0.6rem">Preguntas protocolizadas</div>
+            <div id="saote-preguntas" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:0.8rem"></div>
+          </div>
+
+          <!-- Clasificación automática -->
+          <div id="saote-clasif" style="display:none;margin-top:1.3rem"></div>
+
+          <!-- Instrucciones pre-arribo -->
+          <div id="saote-instr-wrap" style="display:none;margin-top:1rem">
+            <div style="font-size:0.76rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem">📋 Instrucciones pre-arribo (leer al llamante)</div>
+            <div id="saote-instr" style="background:var(--bg2);border:1px solid var(--border);border-left:4px solid var(--azul);border-radius:var(--radius);padding:0.9rem 1rem;font-size:0.92rem;line-height:1.5"></div>
+          </div>
+
+          <div style="display:flex;gap:0.7rem;margin-top:1.4rem;flex-wrap:wrap">
+            <button class="btn-next" onclick="saoteRegistrar()">✅ Registrar llamada</button>
+            <button class="btn-prev" onclick="saoteCancelar()">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- LISTA DE LLAMADAS DEL DÍA -->
+      <div class="card" style="margin-top:1.4rem">
+        <h3 style="margin-bottom:0.9rem">Llamadas de hoy <span id="saote-count" style="color:var(--text-muted);font-weight:400"></span></h3>
+        <div id="saote-lista"></div>
+      </div>
+    </div>
+
   </main>
+
+  <!-- MODAL DETALLE SAOTE -->
+  <div id="modal-saote-det" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center;padding:1rem" onclick="if(event.target===this)cerrarSaoteDet()">
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);max-width:520px;width:100%;max-height:85vh;overflow-y:auto;padding:1.4rem;box-shadow:var(--shadow)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <h3 style="margin:0">📞 Detalle de la llamada</h3>
+        <button class="btn-prev" onclick="cerrarSaoteDet()">✕ Cerrar</button>
+      </div>
+      <div id="saote-det-body" style="font-size:0.9rem;line-height:1.6"></div>
+    </div>
+  </div>
 
   <!-- MODAL EVA -->
   <div id="modal-eva" onclick="if(event.target===this)closeModalEva()">
@@ -5249,5 +5332,271 @@
 </div>
 <!-- MODAL FORMA DE LLEGADA — AMBULANCIA -->
 <footer style="text-align:center;padding:16px 12px;font-size:0.72rem;color:var(--text-muted);line-height:1.5">© 2026 Dr. M. D. S. y col. · SUT Triage · Todos los derechos reservados · Uso clínico exclusivo</footer>
+
+<!-- ═══════════════ SAOTE — Sistema de Apoyo al Operador Telefónico de Emergencias ═══════════════ -->
+<script>
+(function(){
+  'use strict';
+  const SAOTE_KEY = 'saote_llamadas';
+  let saoteInicio = null;      // Date de inicio de la llamada activa
+  let saoteTimer  = null;      // interval del cronómetro
+
+  const MOTIVOS = {
+    PCR:          { label:'Paro cardíaco/PCR', preguntas:[
+      {id:'respira',    q:'¿La persona respira?',         t:'sino'},
+      {id:'consciente', q:'¿Está consciente?',            t:'sino'},
+      {id:'rcp',        q:'¿Alguien presente sabe RCP?',  t:'sino'},
+      {id:'dea',        q:'¿Hay desfibrilador disponible?', t:'sino'} ]},
+    Disnea:       { label:'Dificultad respiratoria', preguntas:[
+      {id:'habla',      q:'¿Puede hablar?',               t:'sino'},
+      {id:'cianosis',   q:'¿Está cianótico (azul)?',      t:'sino'},
+      {id:'antecResp',  q:'¿Antecedentes de asma o EPOC?', t:'sino'} ]},
+    DolorTorax:   { label:'Dolor torácico', preguntas:[
+      {id:'irradia',    q:'¿El dolor irradia al brazo o mandíbula?', t:'sino'},
+      {id:'sudor',      q:'¿Tiene sudoración?',           t:'sino'},
+      {id:'antecCard',  q:'¿Antecedentes cardíacos?',     t:'sino'} ]},
+    ACV:          { label:'ACV/Déficit neurológico', preguntas:[
+      {id:'debilidad',  q:'¿Debilidad en cara/brazo/pierna?', t:'sino'},
+      {id:'hablaDif',   q:'¿Dificultad para hablar?',     t:'sino'},
+      {id:'horaInicio', q:'¿Hora de inicio de síntomas?', t:'text'} ]},
+    Trauma:       { label:'Trauma/Accidente', preguntas:[
+      {id:'consciente', q:'¿Está consciente?',            t:'sino'},
+      {id:'hemorragia', q:'¿Hay hemorragia visible?',     t:'sino'},
+      {id:'mueve',      q:'¿Puede mover extremidades?',   t:'sino'} ]},
+    Inconsciente: { label:'Inconsciente', preguntas:[
+      {id:'respira',    q:'¿Respira?',                    t:'sino'},
+      {id:'pulso',      q:'¿Tiene pulso?',                t:'sino'},
+      {id:'causa',      q:'¿Causa conocida?',             t:'text'} ]},
+    Convulsiones: { label:'Convulsiones', preguntas:[
+      {id:'sigue',      q:'¿Sigue convulsionando?',       t:'sino'},
+      {id:'primera',    q:'¿Es la primera vez?',          t:'sino'},
+      {id:'duracion',   q:'¿Duración aproximada?',        t:'text'} ]},
+    Hemorragia:   { label:'Hemorragia', preguntas:[
+      {id:'origen',     q:'¿Origen de la hemorragia?',    t:'text'},
+      {id:'abundante',  q:'¿Es abundante?',               t:'sino'},
+      {id:'comprime',   q:'¿Se puede comprimir?',         t:'sino'} ]},
+    Intoxicacion: { label:'Intoxicación/Sobredosis', preguntas:[
+      {id:'sustancia',  q:'¿Qué sustancia?',              t:'text'},
+      {id:'cantidad',   q:'¿Cantidad aproximada?',        t:'text'},
+      {id:'horaIng',    q:'¿Hora de ingesta?',            t:'text'},
+      {id:'consciente', q:'¿Está consciente?',            t:'sino'} ]},
+    Otro:         { label:'Otro', preguntas:[] }
+  };
+
+  const INSTR = {
+    PCR:          'Coloque a la persona boca arriba sobre superficie firme. Inicie compresiones en el centro del pecho, firmes y rápidas, 100 por minuto. No interrumpa hasta que llegue el equipo.',
+    Disnea:       'Siente a la persona incorporada, que no se acueste. Afloje ropa ajustada. Manténgala tranquila y que respire lento.',
+    DolorTorax:   'Haga reposar a la persona, que no haga esfuerzos. Si tiene aspirina disponible y no es alérgico, puede dar 300 mg masticada. Manténgala tranquila.',
+    ACV:          'No le dé nada por boca. No la mueva innecesariamente. Anote la hora exacta en que comenzaron los síntomas.',
+    Trauma:       'No mueva a la persona si sospecha lesión de columna. Si hay hemorragia, comprima con tela limpia y presión firme.',
+    Inconsciente: 'Colóquela de lado (posición de recuperación) si respira. Vigile la respiración de forma continua. No le dé nada por boca.',
+    Convulsiones: 'Aleje objetos peligrosos. No sujete a la persona ni ponga nada en su boca. Colóquela de lado cuando cese la convulsión.',
+    Hemorragia:   'Comprima la herida con tela limpia con presión firme y sostenida. No levante la compresión para ver la herida.',
+    Intoxicacion: 'No provoque el vómito salvo indicación médica. Conserve el envase o sustancia para mostrarlo al equipo.',
+    Otro:         'Mantenga la calma al llamante, obtenga la mayor información posible y espere la llegada del equipo.'
+  };
+
+  const CLAVES = {
+    1: { txt:'🔴 Clave 1 — Emergencia',            sub:'Riesgo vital inmediato — respuesta inmediata',      color:'var(--rojo)' },
+    2: { txt:'🟠 Clave 2 — Urgencia',              sub:'Riesgo potencial — respuesta rápida',               color:'var(--naranja)' },
+    3: { txt:'🟡 Clave 3 — Médico a domicilio',    sub:'Sin riesgo vital inmediato',                        color:'var(--amarillo)' },
+    4: { txt:'🟢 Clave 4 — Consulta telefónica',   sub:'Orientación sin despacho de móvil',                 color:'var(--verde)' }
+  };
+
+  function getLlamadas(){ try { return JSON.parse(localStorage.getItem(SAOTE_KEY)||'[]'); } catch(e){ return []; } }
+  function saveLlamadas(a){ localStorage.setItem(SAOTE_KEY, JSON.stringify(a)); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function fmtHora(iso){ try { return new Date(iso).toLocaleTimeString('es-UY',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); } catch(e){ return '—'; } }
+  function fmtDur(seg){ const m=Math.floor(seg/60), s=seg%60; return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'); }
+  function ansVal(id){ const el=document.getElementById('sq-a-'+id); return el ? el.value : ''; }
+
+  // ── Lógica de clasificación automática ──
+  function clasificar(motivo){
+    if (!motivo) return null;
+    const a = id => ansVal(id);
+    switch(motivo){
+      case 'PCR':          return 1;
+      case 'Inconsciente': return (a('respira')==='no' || a('pulso')==='no') ? 1 : 2;
+      case 'Hemorragia':   return (a('abundante')==='si' || a('comprime')==='no') ? 1 : 2;
+      case 'Trauma':       return (a('consciente')==='no') ? 1 : 2;
+      case 'DolorTorax':   return (a('irradia')==='si' || a('sudor')==='si') ? 1 : 2;
+      case 'ACV':          return (a('debilidad')==='si' || a('hablaDif')==='si') ? 1 : 2;
+      case 'Disnea':       return (a('cianosis')==='si' || a('habla')==='no') ? 1 : 2;
+      case 'Convulsiones': return (a('sigue')==='si') ? 1 : 2;
+      case 'Intoxicacion': return (a('consciente')==='no') ? 1 : 2;
+      case 'Otro':         return 3;
+      default:             return 3;
+    }
+  }
+
+  window.saoteNueva = function(){
+    document.getElementById('saote-form').style.display = 'block';
+    document.getElementById('saote-nueva-btn').style.display = 'none';
+    // limpiar campos
+    ['sq-llamante','sq-telefono','sq-direccion'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
+    document.getElementById('sq-personas').value = 1;
+    document.getElementById('sq-motivo').selectedIndex = 0;
+    document.getElementById('saote-preguntas-wrap').style.display = 'none';
+    document.getElementById('saote-preguntas').innerHTML = '';
+    document.getElementById('saote-clasif').style.display = 'none';
+    document.getElementById('saote-instr-wrap').style.display = 'none';
+    // timestamp de inicio
+    saoteInicio = new Date();
+    document.getElementById('saote-inicio-txt').textContent = fmtHora(saoteInicio.toISOString());
+    document.getElementById('saote-dur-txt').textContent = '00:00';
+    if (saoteTimer) clearInterval(saoteTimer);
+    saoteTimer = setInterval(function(){
+      if (!saoteInicio) return;
+      const seg = Math.floor((Date.now() - saoteInicio.getTime())/1000);
+      document.getElementById('saote-dur-txt').textContent = fmtDur(seg);
+    }, 1000);
+    document.getElementById('saote-form').scrollIntoView({behavior:'smooth', block:'start'});
+  };
+
+  window.saoteMotivo = function(){
+    const motivo = document.getElementById('sq-motivo').value;
+    const wrap = document.getElementById('saote-preguntas-wrap');
+    const cont = document.getElementById('saote-preguntas');
+    cont.innerHTML = '';
+    if (!motivo || !MOTIVOS[motivo] || MOTIVOS[motivo].preguntas.length === 0){
+      wrap.style.display = 'none';
+    } else {
+      MOTIVOS[motivo].preguntas.forEach(function(p){
+        const div = document.createElement('div');
+        div.className = 'vital-field';
+        if (p.t === 'sino'){
+          div.innerHTML = '<label>'+esc(p.q)+'</label>'+
+            '<select id="sq-a-'+p.id+'" style="width:100%" onchange="saoteCalc()">'+
+            '<option value="">—</option><option value="si">Sí</option><option value="no">No</option></select>';
+        } else {
+          div.innerHTML = '<label>'+esc(p.q)+'</label>'+
+            '<input type="text" id="sq-a-'+p.id+'" autocomplete="off" oninput="saoteCalc()" />';
+        }
+        cont.appendChild(div);
+      });
+      wrap.style.display = 'block';
+    }
+    saoteCalc();
+  };
+
+  window.saoteCalc = function(){
+    const motivo = document.getElementById('sq-motivo').value;
+    const badge = document.getElementById('saote-clasif');
+    const iWrap = document.getElementById('saote-instr-wrap');
+    const iBox  = document.getElementById('saote-instr');
+    if (!motivo){ badge.style.display='none'; iWrap.style.display='none'; return; }
+    const clave = clasificar(motivo);
+    const c = CLAVES[clave];
+    badge.style.display = 'block';
+    badge.innerHTML =
+      '<div style="border-radius:var(--radius);padding:1rem 1.2rem;background:'+c.color+';color:#fff;box-shadow:var(--shadow)">'+
+        '<div style="font-size:1.25rem;font-weight:800;line-height:1.2">'+c.txt+'</div>'+
+        '<div style="font-size:0.85rem;opacity:0.92;margin-top:0.25rem">'+c.sub+'</div>'+
+      '</div>';
+    const instr = INSTR[motivo] || INSTR.Otro;
+    iBox.textContent = instr;
+    iWrap.style.display = 'block';
+  };
+
+  window.saoteCancelar = function(){
+    if (saoteTimer){ clearInterval(saoteTimer); saoteTimer = null; }
+    saoteInicio = null;
+    document.getElementById('saote-form').style.display = 'none';
+    document.getElementById('saote-nueva-btn').style.display = '';
+  };
+
+  window.saoteRegistrar = function(){
+    const direccion = document.getElementById('sq-direccion').value.trim();
+    if (!direccion){ alert('La dirección / ubicación es obligatoria.'); document.getElementById('sq-direccion').focus(); return; }
+    const motivo = document.getElementById('sq-motivo').value;
+    if (!motivo){ alert('Seleccioná el motivo de la llamada.'); document.getElementById('sq-motivo').focus(); return; }
+    const fin = new Date();
+    const ini = saoteInicio || fin;
+    const durSeg = Math.max(0, Math.floor((fin.getTime() - ini.getTime())/1000));
+    const respuestas = (MOTIVOS[motivo].preguntas||[]).map(function(p){
+      const el = document.getElementById('sq-a-'+p.id);
+      let v = el ? el.value : '';
+      if (p.t === 'sino') v = (v==='si'?'Sí':v==='no'?'No':'—');
+      return { pregunta: p.q, respuesta: v || '—' };
+    });
+    const clave = clasificar(motivo);
+    const reg = {
+      id: Date.now(),
+      horaInicio: ini.toISOString(),
+      horaFin: fin.toISOString(),
+      duracionSeg: durSeg,
+      llamante: document.getElementById('sq-llamante').value.trim(),
+      telefono: document.getElementById('sq-telefono').value.trim(),
+      direccion: direccion,
+      personas: parseInt(document.getElementById('sq-personas').value)||1,
+      motivo: motivo,
+      motivoLabel: MOTIVOS[motivo].label,
+      respuestas: respuestas,
+      clave: clave,
+      claveTxt: CLAVES[clave].txt,
+      instrucciones: INSTR[motivo] || INSTR.Otro,
+      operador: (window.usuarioActivo && window.usuarioActivo.nombre) || null
+    };
+    const arr = getLlamadas();
+    arr.push(reg);
+    saveLlamadas(arr);
+    if (saoteTimer){ clearInterval(saoteTimer); saoteTimer = null; }
+    saoteInicio = null;
+    document.getElementById('saote-form').style.display = 'none';
+    document.getElementById('saote-nueva-btn').style.display = '';
+    saoteRender();
+    if (typeof window.mostrarToast === 'function') window.mostrarToast('📞 Llamada registrada · '+CLAVES[clave].txt, clave);
+  };
+
+  window.saoteRender = function(){
+    const cont = document.getElementById('saote-lista');
+    if (!cont) return;
+    const hoy = new Date().toLocaleDateString('sv-SE');
+    const arr = getLlamadas().filter(function(l){ try { return new Date(l.horaInicio).toLocaleDateString('sv-SE')===hoy; } catch(e){ return false; } });
+    arr.sort(function(a,b){ return b.id - a.id; });
+    const cnt = document.getElementById('saote-count');
+    if (cnt) cnt.textContent = arr.length ? '· '+arr.length : '';
+    if (!arr.length){ cont.innerHTML = '<div style="color:var(--text-muted);font-size:0.88rem;padding:0.5rem 0">Sin llamadas registradas hoy.</div>'; return; }
+    cont.innerHTML = arr.map(function(l){
+      const c = CLAVES[l.clave] || CLAVES[3];
+      return '<div style="display:flex;align-items:center;gap:0.75rem;padding:0.7rem 0.4rem;border-bottom:1px solid var(--border)">'+
+        '<span style="flex:0 0 8px;width:8px;height:38px;border-radius:4px;background:'+c.color+'"></span>'+
+        '<div style="flex:1;min-width:0">'+
+          '<div style="font-weight:700;font-size:0.9rem">'+esc(l.motivoLabel)+' <span style="font-weight:400;color:var(--text-muted)">· '+esc(l.direccion)+'</span></div>'+
+          '<div style="font-size:0.78rem;color:var(--text-muted)">'+fmtHora(l.horaInicio)+' · '+fmtDur(l.duracionSeg)+' · '+esc(c.txt)+'</div>'+
+        '</div>'+
+        '<button class="btn-prev" style="padding:0.4rem 0.7rem;font-size:0.8rem" onclick="saoteDetalle('+l.id+')">Ver detalle</button>'+
+      '</div>';
+    }).join('');
+  };
+
+  window.saoteDetalle = function(id){
+    const l = getLlamadas().find(function(x){ return x.id === id; });
+    if (!l) return;
+    const c = CLAVES[l.clave] || CLAVES[3];
+    const preg = (l.respuestas||[]).map(function(r){ return '<li><strong>'+esc(r.pregunta)+'</strong> '+esc(r.respuesta)+'</li>'; }).join('');
+    const row = function(k,v){ return '<div style="margin-bottom:0.35rem"><span style="color:var(--text-muted)">'+k+':</span> '+v+'</div>'; };
+    document.getElementById('saote-det-body').innerHTML =
+      '<div style="border-radius:var(--radius);padding:0.7rem 0.9rem;margin-bottom:0.9rem;background:'+c.color+';color:#fff;font-weight:800">'+esc(c.txt)+'</div>'+
+      row('Motivo', esc(l.motivoLabel))+
+      row('Inicio', fmtHora(l.horaInicio))+
+      row('Fin', fmtHora(l.horaFin))+
+      row('Duración', fmtDur(l.duracionSeg))+
+      row('Llamante', esc(l.llamante||'—'))+
+      row('Teléfono', esc(l.telefono||'—'))+
+      row('Dirección', esc(l.direccion||'—'))+
+      row('Personas afectadas', esc(l.personas))+
+      (preg ? '<div style="margin-top:0.7rem;font-weight:700">Preguntas protocolizadas</div><ul style="margin:0.3rem 0 0.6rem 1.1rem;padding:0">'+preg+'</ul>' : '')+
+      '<div style="margin-top:0.7rem;font-weight:700">Instrucciones dadas</div>'+
+      '<div style="background:var(--bg2);border:1px solid var(--border);border-left:4px solid var(--azul);border-radius:var(--radius);padding:0.7rem 0.85rem;margin-top:0.3rem;font-size:0.88rem;line-height:1.5">'+esc(l.instrucciones||'—')+'</div>'+
+      (l.operador ? '<div style="margin-top:0.7rem;color:var(--text-muted);font-size:0.82rem">Operador: '+esc(l.operador)+'</div>' : '');
+    document.getElementById('modal-saote-det').style.display = 'flex';
+  };
+
+  window.cerrarSaoteDet = function(){ document.getElementById('modal-saote-det').style.display = 'none'; };
+
+  document.addEventListener('DOMContentLoaded', function(){ if (typeof window.saoteRender === 'function') window.saoteRender(); });
+})();
+</script>
 </body>
 </html>
