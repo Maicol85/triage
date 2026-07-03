@@ -1404,6 +1404,14 @@
               </optgroup>
             </select>
           </div>
+          <div class="vital-field" style="max-width:280px">
+            <label for="clf-llegada">Forma de llegada <span style="color:var(--rojo)">*</span></label>
+            <select id="clf-llegada" onchange="onLlegada()">
+              <option value="">— Seleccioná —</option>
+              <option value="Ambulatorio">Ambulatorio</option>
+              <option value="Ambulancia">Ambulancia</option>
+            </select>
+          </div>
           <div class="vital-field">
             <label for="clf-obs">Observaciones <span style="color:var(--text-muted);font-weight:400;font-size:0.72rem">(opcional)</span></label>
             <textarea id="clf-obs" rows="2" placeholder="Observaciones (opcional)..." style="width:100%;font-family:inherit"></textarea>
@@ -1499,23 +1507,6 @@
         <div class="override-row" id="override-motivo-wrap" style="display:none;flex-direction:column;align-items:stretch;gap:0.4rem">
           <label>Motivo del cambio de clasificación <span style="color:var(--rojo)">*</span></label>
           <textarea id="override-motivo" rows="2" placeholder="Justificá el cambio de clasificación (obligatorio)..." style="width:100%;font-family:inherit"></textarea>
-        </div>
-        <div class="card">
-          <h3>Forma de llegada</h3>
-          <div class="vital-field" style="max-width:280px">
-            <label for="clf-llegada">Forma de llegada</label>
-            <select id="clf-llegada" onchange="onLlegada()">
-              <option value="Ambulatorio">Ambulatorio</option>
-              <option value="Ambulancia">Ambulancia</option>
-            </select>
-          </div>
-          <div id="clf-amb-fields" style="display:none">
-            <div style="display:flex;gap:1rem;flex-wrap:wrap">
-              <div class="vital-field" style="max-width:220px"><label for="clf-amb-id">Identificación de la ambulancia</label><input type="text" id="clf-amb-id" autocomplete="off" placeholder="Ej: SEM 12" /></div>
-              <div class="vital-field" style="max-width:220px"><label for="clf-amb-proc">Procedencia</label><input type="text" id="clf-amb-proc" autocomplete="off" placeholder="Centro que traslada" /></div>
-              <div class="vital-field" style="max-width:220px"><label for="clf-amb-estado">Estado al llegar</label><select id="clf-amb-estado"><option value="Atendido inmediato">Atendido inmediato</option><option value="Espera afuera">Espera afuera</option></select></div>
-            </div>
-          </div>
         </div>
         <div class="clf-nav">
           <button class="btn-prev" onclick="irPaso(2)">← Atrás</button>
@@ -2274,7 +2265,11 @@
   }
   function onLlegada() {
     const v = document.getElementById('clf-llegada').value;
-    document.getElementById('clf-amb-fields').style.display = (v === 'Ambulancia') ? 'block' : 'none';
+    if (v === 'Ambulancia') { document.getElementById('modal-clf-amb').style.display = 'flex'; }
+  }
+  function cerrarModalAmb(cancelar) {
+    document.getElementById('modal-clf-amb').style.display = 'none';
+    if (cancelar) { document.getElementById('clf-llegada').value = 'Ambulatorio'; }
   }
 
   function selectAVPU(btn) {
@@ -2294,6 +2289,7 @@
   function irPaso2() {
     const sel = document.getElementById('clf-motivo-sel');
     if (!sel.value) { alert('Seleccioná un motivo de consulta antes de continuar.'); return; }
+    if (!document.getElementById('clf-llegada').value) { alert('Seleccioná la forma de llegada antes de continuar.'); return; }
     irPaso(2);
   }
 
@@ -2445,8 +2441,9 @@
     const ov=document.getElementById('override-nivel'); if(ov) ov.value='';
     const ovm=document.getElementById('override-motivo-wrap'); if(ovm) ovm.style.display='none';
     const ovmt=document.getElementById('override-motivo'); if(ovmt) ovmt.value='';
-    const ll=document.getElementById('clf-llegada'); if(ll) ll.value='Ambulatorio';
-    const af=document.getElementById('clf-amb-fields'); if(af) af.style.display='none';
+    const ll=document.getElementById('clf-llegada'); if(ll) ll.value='';
+    const mam=document.getElementById('modal-clf-amb'); if(mam) mam.style.display='none';
+    const ae=document.getElementById('clf-amb-estado'); if(ae) ae.selectedIndex=0;
     irPaso(1);
   }
 
@@ -5168,6 +5165,19 @@
         <div id="amb-historial" style="margin-top:0.45rem"></div>
       </details>
 
+    </div>
+  </div>
+</div>
+<!-- MODAL FORMA DE LLEGADA — AMBULANCIA -->
+<div id="modal-clf-amb" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center;padding:1rem" onclick="if(event.target===this)cerrarModalAmb(true)">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);max-width:420px;width:100%;padding:1.4rem;box-shadow:var(--shadow)">
+    <h3 style="margin-bottom:1rem">🚑 Datos de la ambulancia</h3>
+    <div class="vital-field" style="margin-bottom:0.8rem"><label for="clf-amb-id">Identificación de la ambulancia</label><input type="text" id="clf-amb-id" autocomplete="off" placeholder="Ej: SEM 12" style="width:100%" /></div>
+    <div class="vital-field" style="margin-bottom:0.8rem"><label for="clf-amb-proc">Procedencia</label><input type="text" id="clf-amb-proc" autocomplete="off" placeholder="Centro que traslada" style="width:100%" /></div>
+    <div class="vital-field" style="margin-bottom:1.1rem"><label for="clf-amb-estado">Estado al llegar</label><select id="clf-amb-estado" style="width:100%"><option value="Atendido inmediato">Atendido inmediato</option><option value="Espera afuera">Espera afuera</option></select></div>
+    <div style="display:flex;gap:0.6rem;justify-content:flex-end">
+      <button class="btn-prev" onclick="cerrarModalAmb(true)">Cancelar</button>
+      <button class="btn-next" onclick="cerrarModalAmb(false)">Confirmar</button>
     </div>
   </div>
 </div>
