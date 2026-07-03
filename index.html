@@ -1239,6 +1239,9 @@
         </div>
         <span class="huser-edit" aria-hidden="true">✏️</span>
       </div>
+      <button class="btn-ambulancias" id="btn-ambulancias" onclick="abrirAmbulancias()" title="Ambulancias en espera">
+        🚑 Ambulancias<span class="amb-badge" id="amb-badge" style="display:none">0</span>
+      </button>
       <button class="btn-theme" id="btn-theme" onclick="toggleTheme()" title="Cambiar modo claro/oscuro">🌙</button>
       <button class="btn-icon-hdr" onclick="abrirConfigAdmin()" title="Configuración de administración">⚙️</button>
       <button class="btn-cerrar" onclick="bloquear()">🔒 Bloquear</button>
@@ -1402,8 +1405,8 @@
             </select>
           </div>
           <div class="vital-field">
-            <label for="clf-obs">Observaciones <span style="color:var(--rojo)">*</span></label>
-            <textarea id="clf-obs" rows="2" placeholder="Observaciones (obligatorio)..." oninput="onObsInput()" style="width:100%;font-family:inherit"></textarea>
+            <label for="clf-obs">Observaciones <span style="color:var(--text-muted);font-weight:400;font-size:0.72rem">(opcional)</span></label>
+            <textarea id="clf-obs" rows="2" placeholder="Observaciones (opcional)..." style="width:100%;font-family:inherit"></textarea>
           </div>
         </div>
         <div class="clf-nav">
@@ -2266,10 +2269,8 @@
     onObsInput();
   }
   function onObsInput() {
-    const sel = document.getElementById('clf-motivo-sel');
     const obs = document.getElementById('clf-obs');
-    const isOtro = sel && sel.value === 'Otro';
-    obs.style.borderColor = (isOtro && !obs.value.trim()) ? 'var(--rojo)' : '';
+    if (obs) obs.style.borderColor = '';
   }
   function onLlegada() {
     const v = document.getElementById('clf-llegada').value;
@@ -2293,8 +2294,6 @@
   function irPaso2() {
     const sel = document.getElementById('clf-motivo-sel');
     if (!sel.value) { alert('Seleccioná un motivo de consulta antes de continuar.'); return; }
-    const obs = document.getElementById('clf-obs');
-    if (!obs.value.trim()) { alert('Completá las Observaciones antes de continuar.'); obs.style.borderColor = 'var(--rojo)'; obs.focus(); return; }
     irPaso(2);
   }
 
@@ -2380,7 +2379,6 @@
     const esp = sel ? sel.value : '';
     const obs = (document.getElementById('clf-obs').value||'').trim();
     if (!esp) { alert('Seleccioná un motivo de consulta.'); irPaso(1); return; }
-    if (!obs) { alert('Completá las Observaciones antes de guardar.'); irPaso(1); setTimeout(()=>{ const o=document.getElementById('clf-obs'); o.style.borderColor='var(--rojo)'; o.focus(); },300); return; }
     const override = document.getElementById('override-nivel').value;
     let overrideMotivo = '';
     if (override) {
@@ -5125,6 +5123,54 @@
 </script>
 <div id="alerta-critica-container" aria-live="assertive" aria-atomic="false"></div>
 <div id="alerta-timer-container" aria-live="polite" aria-atomic="false"></div>
+<!-- MODAL AMBULANCIAS -->
+<div id="modal-ambulancias" onclick="if(event.target===this)cerrarAmbulancias()">
+  <div class="amb-modal-box">
+    <div class="amb-modal-hdr">
+      <h3>🚑 Ambulancias en espera</h3>
+      <button class="btn-cfg-close" onclick="cerrarAmbulancias()">✕ Cerrar</button>
+    </div>
+    <div class="amb-modal-body">
+
+      <div class="card" style="margin:0">
+        <h3 style="font-size:0.87rem;margin-bottom:0.75rem">Registrar nueva ambulancia</h3>
+        <div class="amb-form">
+          <div class="vital-field">
+            <label>Nombre del paciente</label>
+            <input type="text" id="amb-nombre" placeholder="Nombre completo" autocomplete="off"
+              onkeydown="if(event.key==='Enter')registrarAmbulancia()" />
+          </div>
+          <div class="vital-field">
+            <label>Patología / motivo de traslado</label>
+            <input type="text" id="amb-patologia" placeholder="Ej: TCE, IAM, Quemado…" autocomplete="off" />
+          </div>
+          <div class="vital-field">
+            <label>Hora de aviso</label>
+            <input type="time" id="amb-hora-aviso" class="pac-date-in" />
+          </div>
+          <div class="vital-field">
+            <label>Procedencia (opcional)</label>
+            <input type="text" id="amb-procedencia" placeholder="Centro que traslada" autocomplete="off" />
+          </div>
+        </div>
+        <button class="btn-next" style="margin-top:0.8rem;width:100%" onclick="registrarAmbulancia()">🚑 Registrar ambulancia</button>
+      </div>
+
+      <div>
+        <div style="font-size:0.76rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.45rem">En espera</div>
+        <div class="amb-lista" id="amb-lista"></div>
+      </div>
+
+      <details>
+        <summary style="cursor:pointer;font-size:0.81rem;font-weight:600;color:var(--text-muted);padding:0.3rem 0;list-style:none">
+          ▶ Historial de hoy
+        </summary>
+        <div id="amb-historial" style="margin-top:0.45rem"></div>
+      </details>
+
+    </div>
+  </div>
+</div>
 <footer style="text-align:center;padding:16px 12px;font-size:0.72rem;color:var(--text-muted);line-height:1.5">© 2026 Dr. M. D. S. y col. · SUT Triage · Todos los derechos reservados · Uso clínico exclusivo</footer>
 </body>
 </html>
