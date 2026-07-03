@@ -1239,9 +1239,6 @@
         </div>
         <span class="huser-edit" aria-hidden="true">✏️</span>
       </div>
-      <button class="btn-ambulancias" id="btn-ambulancias" onclick="abrirAmbulancias()" title="Ambulancias en espera">
-        🚑 Ambulancias<span class="amb-badge" id="amb-badge" style="display:none">0</span>
-      </button>
       <button class="btn-theme" id="btn-theme" onclick="toggleTheme()" title="Cambiar modo claro/oscuro">🌙</button>
       <button class="btn-icon-hdr" onclick="abrirConfigAdmin()" title="Configuración de administración">⚙️</button>
       <button class="btn-cerrar" onclick="bloquear()">🔒 Bloquear</button>
@@ -1359,23 +1356,54 @@
         </div>
         <div class="card">
           <h3>Motivo de consulta</h3>
-          <div class="motivos-grid">
-            <button class="motivo-btn" data-motivo="cardio"       onclick="selectMotivo(this)"><span class="motivo-icon">🫀</span><span class="motivo-label">Cardiorrespiratorio</span></button>
-            <button class="motivo-btn" data-motivo="neuro"        onclick="selectMotivo(this)"><span class="motivo-icon">🧠</span><span class="motivo-label">Neurológico</span></button>
-            <button class="motivo-btn" data-motivo="trauma"       onclick="selectMotivo(this)"><span class="motivo-icon">🤕</span><span class="motivo-label">Traumático</span></button>
-            <button class="motivo-btn" data-motivo="respiratorio" onclick="selectMotivo(this)"><span class="motivo-icon">🫁</span><span class="motivo-label">Respiratorio</span></button>
-            <button class="motivo-btn" data-motivo="digestivo"    onclick="selectMotivo(this)"><span class="motivo-icon">🤢</span><span class="motivo-label">Abdominal / Digestivo</span></button>
-            <button class="motivo-btn" data-motivo="gineco"       onclick="selectMotivo(this)"><span class="motivo-icon">🤰</span><span class="motivo-label">Gineco-obstétrico</span></button>
-            <button class="motivo-btn" data-motivo="urologico"    onclick="selectMotivo(this)"><span class="motivo-icon">🩺</span><span class="motivo-label">Urológico</span></button>
-            <button class="motivo-btn" data-motivo="psiquiatrico" onclick="selectMotivo(this)"><span class="motivo-icon">🧘</span><span class="motivo-label">Psiquiátrico</span></button>
-            <button class="motivo-btn" data-motivo="intox"        onclick="selectMotivo(this)"><span class="motivo-icon">💊</span><span class="motivo-label">Intoxicación</span></button>
-            <button class="motivo-btn" data-motivo="fiebre"       onclick="selectMotivo(this)"><span class="motivo-icon">🌡️</span><span class="motivo-label">Fiebre / Infección</span></button>
-            <button class="motivo-btn" data-motivo="pcr"          onclick="selectMotivo(this)"><span class="motivo-icon">🚨</span><span class="motivo-label">PCR / Sin pulso</span></button>
-            <button class="motivo-btn" data-motivo="otro"         onclick="selectMotivo(this)"><span class="motivo-icon">📋</span><span class="motivo-label">Otro</span></button>
+          <div class="vital-field">
+            <label for="clf-motivo-sel">Motivo</label>
+            <select id="clf-motivo-sel" onchange="onMotivoSel()">
+              <option value="">— Seleccioná un motivo —</option>
+              <optgroup label="Cardiovascular / Respiratorio">
+                <option data-cat="cardio" value="Dolor torácico">Dolor torácico</option>
+                <option data-cat="cardio" value="Palpitaciones / Arritmia">Palpitaciones / Arritmia</option>
+                <option data-cat="cardio" value="Disnea / Dificultad respiratoria">Disnea / Dificultad respiratoria</option>
+                <option data-cat="cardio" value="Síncope / Pérdida de conocimiento">Síncope / Pérdida de conocimiento</option>
+                <option data-cat="cardio" value="HTA descompensada">HTA descompensada</option>
+              </optgroup>
+              <optgroup label="Neurológico">
+                <option data-cat="neuro" value="ACV / Déficit neurológico agudo">ACV / Déficit neurológico agudo</option>
+                <option data-cat="neuro" value="Cefalea intensa / súbita">Cefalea intensa / súbita</option>
+                <option data-cat="neuro" value="Convulsiones">Convulsiones</option>
+                <option data-cat="neuro" value="Alteración del sensorio / Confusión">Alteración del sensorio / Confusión</option>
+              </optgroup>
+              <optgroup label="Trauma">
+                <option data-cat="trauma" value="Traumatismo craneoencefálico">Traumatismo craneoencefálico</option>
+                <option data-cat="trauma" value="Traumatismo de tórax / abdomen">Traumatismo de tórax / abdomen</option>
+                <option data-cat="trauma" value="Traumatismo de extremidades">Traumatismo de extremidades</option>
+                <option data-cat="trauma" value="Herida / Lesión cortante">Herida / Lesión cortante</option>
+                <option data-cat="trauma" value="Quemadura">Quemadura</option>
+              </optgroup>
+              <optgroup label="Digestivo">
+                <option data-cat="digestivo" value="Dolor abdominal">Dolor abdominal</option>
+                <option data-cat="digestivo" value="Vómitos / Náuseas">Vómitos / Náuseas</option>
+                <option data-cat="digestivo" value="Diarrea">Diarrea</option>
+                <option data-cat="digestivo" value="Hemorragia digestiva">Hemorragia digestiva</option>
+              </optgroup>
+              <optgroup label="Otros">
+                <option data-cat="fiebre" value="Fiebre / Síndrome febril">Fiebre / Síndrome febril</option>
+                <option data-cat="otro" value="Dolor lumbar">Dolor lumbar</option>
+                <option data-cat="otro" value="Alergia / Reacción alérgica">Alergia / Reacción alérgica</option>
+                <option data-cat="intox" value="Intoxicación / Sobredosis">Intoxicación / Sobredosis</option>
+                <option data-cat="otro" value="Crisis diabética / Hipoglucemia">Crisis diabética / Hipoglucemia</option>
+                <option data-cat="otro" value="Epistaxis / Sangrado">Epistaxis / Sangrado</option>
+                <option data-cat="otro" value="Dolor ocular">Dolor ocular</option>
+                <option data-cat="gineco" value="Embarazo / Ginecológico">Embarazo / Ginecológico</option>
+                <option data-cat="psiquiatrico" value="Crisis psiquiátrica / Angustia">Crisis psiquiátrica / Angustia</option>
+                <option data-cat="urologico" value="Retención urinaria">Retención urinaria</option>
+                <option data-cat="otro" value="Otro">Otro</option>
+              </optgroup>
+            </select>
           </div>
           <div class="vital-field">
-            <label for="clf-motivo-txt">Descripción libre (opcional)</label>
-            <input type="text" id="clf-motivo-txt" placeholder="Describí el motivo..." autocomplete="off" />
+            <label for="clf-obs">Observaciones <span style="color:var(--rojo)">*</span></label>
+            <textarea id="clf-obs" rows="2" placeholder="Observaciones (obligatorio)..." oninput="onObsInput()" style="width:100%;font-family:inherit"></textarea>
           </div>
         </div>
         <div class="clf-nav">
@@ -1464,6 +1492,27 @@
             <option value="4">Nivel 4 — No Programable</option>
             <option value="5">Nivel 5 — Programable</option>
           </select>
+        </div>
+        <div class="override-row" id="override-motivo-wrap" style="display:none;flex-direction:column;align-items:stretch;gap:0.4rem">
+          <label>Motivo del cambio de clasificación <span style="color:var(--rojo)">*</span></label>
+          <textarea id="override-motivo" rows="2" placeholder="Justificá el cambio de clasificación (obligatorio)..." style="width:100%;font-family:inherit"></textarea>
+        </div>
+        <div class="card">
+          <h3>Forma de llegada</h3>
+          <div class="vital-field" style="max-width:280px">
+            <label for="clf-llegada">Forma de llegada</label>
+            <select id="clf-llegada" onchange="onLlegada()">
+              <option value="Ambulatorio">Ambulatorio</option>
+              <option value="Ambulancia">Ambulancia</option>
+            </select>
+          </div>
+          <div id="clf-amb-fields" style="display:none">
+            <div style="display:flex;gap:1rem;flex-wrap:wrap">
+              <div class="vital-field" style="max-width:220px"><label for="clf-amb-id">Identificación de la ambulancia</label><input type="text" id="clf-amb-id" autocomplete="off" placeholder="Ej: SEM 12" /></div>
+              <div class="vital-field" style="max-width:220px"><label for="clf-amb-proc">Procedencia</label><input type="text" id="clf-amb-proc" autocomplete="off" placeholder="Centro que traslada" /></div>
+              <div class="vital-field" style="max-width:220px"><label for="clf-amb-estado">Estado al llegar</label><select id="clf-amb-estado"><option value="Atendido inmediato">Atendido inmediato</option><option value="Espera afuera">Espera afuera</option></select></div>
+            </div>
+          </div>
         </div>
         <div class="clf-nav">
           <button class="btn-prev" onclick="irPaso(2)">← Atrás</button>
@@ -1836,54 +1885,6 @@
 
 </div><!-- /screen-app -->
 
-<!-- MODAL AMBULANCIAS -->
-<div id="modal-ambulancias" onclick="if(event.target===this)cerrarAmbulancias()">
-  <div class="amb-modal-box">
-    <div class="amb-modal-hdr">
-      <h3>🚑 Ambulancias en espera</h3>
-      <button class="btn-cfg-close" onclick="cerrarAmbulancias()">✕ Cerrar</button>
-    </div>
-    <div class="amb-modal-body">
-
-      <div class="card" style="margin:0">
-        <h3 style="font-size:0.87rem;margin-bottom:0.75rem">Registrar nueva ambulancia</h3>
-        <div class="amb-form">
-          <div class="vital-field">
-            <label>Nombre del paciente</label>
-            <input type="text" id="amb-nombre" placeholder="Nombre completo" autocomplete="off"
-              onkeydown="if(event.key==='Enter')registrarAmbulancia()" />
-          </div>
-          <div class="vital-field">
-            <label>Patología / motivo de traslado</label>
-            <input type="text" id="amb-patologia" placeholder="Ej: TCE, IAM, Quemado…" autocomplete="off" />
-          </div>
-          <div class="vital-field">
-            <label>Hora de aviso</label>
-            <input type="time" id="amb-hora-aviso" class="pac-date-in" />
-          </div>
-          <div class="vital-field">
-            <label>Procedencia (opcional)</label>
-            <input type="text" id="amb-procedencia" placeholder="Centro que traslada" autocomplete="off" />
-          </div>
-        </div>
-        <button class="btn-next" style="margin-top:0.8rem;width:100%" onclick="registrarAmbulancia()">🚑 Registrar ambulancia</button>
-      </div>
-
-      <div>
-        <div style="font-size:0.76rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.45rem">En espera</div>
-        <div class="amb-lista" id="amb-lista"></div>
-      </div>
-
-      <details>
-        <summary style="cursor:pointer;font-size:0.81rem;font-weight:600;color:var(--text-muted);padding:0.3rem 0;list-style:none">
-          ▶ Historial de hoy
-        </summary>
-        <div id="amb-historial" style="margin-top:0.45rem"></div>
-      </details>
-
-    </div>
-  </div>
-</div>
 
 <!-- MODAL PERÍODO PDF -->
 <div id="modal-pdf-periodo" onclick="if(event.target===this)document.getElementById('modal-pdf-periodo').classList.remove('active')">
@@ -2259,6 +2260,21 @@
     document.querySelectorAll('.motivo-btn').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected'); clfMotivo = btn.dataset.motivo;
   }
+  function onMotivoSel() {
+    const sel = document.getElementById('clf-motivo-sel');
+    clfMotivo = sel.value ? (sel.selectedOptions[0].dataset.cat || 'otro') : null;
+    onObsInput();
+  }
+  function onObsInput() {
+    const sel = document.getElementById('clf-motivo-sel');
+    const obs = document.getElementById('clf-obs');
+    const isOtro = sel && sel.value === 'Otro';
+    obs.style.borderColor = (isOtro && !obs.value.trim()) ? 'var(--rojo)' : '';
+  }
+  function onLlegada() {
+    const v = document.getElementById('clf-llegada').value;
+    document.getElementById('clf-amb-fields').style.display = (v === 'Ambulancia') ? 'block' : 'none';
+  }
 
   function selectAVPU(btn) {
     document.querySelectorAll('.avpu-btn').forEach(b => b.classList.remove('selected'));
@@ -2275,7 +2291,10 @@
   }
 
   function irPaso2() {
-    if (!clfMotivo) { alert('Seleccioná un motivo de consulta antes de continuar.'); return; }
+    const sel = document.getElementById('clf-motivo-sel');
+    if (!sel.value) { alert('Seleccioná un motivo de consulta antes de continuar.'); return; }
+    const obs = document.getElementById('clf-obs');
+    if (!obs.value.trim()) { alert('Completá las Observaciones antes de continuar.'); obs.style.borderColor = 'var(--rojo)'; obs.focus(); return; }
     irPaso(2);
   }
 
@@ -2351,19 +2370,39 @@
 
   function aplicarOverride() {
     const val = document.getElementById('override-nivel').value;
+    const w = document.getElementById('override-motivo-wrap');
+    if (w) w.style.display = val ? 'flex' : 'none';
     renderResultado(val ? parseInt(val) : clfNivelSug, clfDisc);
   }
 
   function guardarPaciente() {
+    const sel = document.getElementById('clf-motivo-sel');
+    const esp = sel ? sel.value : '';
+    const obs = (document.getElementById('clf-obs').value||'').trim();
+    if (!esp) { alert('Seleccioná un motivo de consulta.'); irPaso(1); return; }
+    if (!obs) { alert('Completá las Observaciones antes de guardar.'); irPaso(1); setTimeout(()=>{ const o=document.getElementById('clf-obs'); o.style.borderColor='var(--rojo)'; o.focus(); },300); return; }
     const override = document.getElementById('override-nivel').value;
+    let overrideMotivo = '';
+    if (override) {
+      overrideMotivo = (document.getElementById('override-motivo').value||'').trim();
+      if (!overrideMotivo) { alert('Indicá el motivo del cambio de clasificación antes de guardar.'); document.getElementById('override-motivo').focus(); return; }
+    }
     const nivelFinal = override ? parseInt(override) : clfNivelSug;
+    const llegada  = document.getElementById('clf-llegada').value;
+    const ambId    = document.getElementById('clf-amb-id').value.trim();
+    const ambProc  = document.getElementById('clf-amb-proc').value.trim();
+    const ambEstado= document.getElementById('clf-amb-estado').value;
+    let motivoTexto = esp + (obs ? ' — Obs: ' + obs : '');
+    if (llegada === 'Ambulancia') motivoTexto += ' · 🚑 ' + (ambId || 'Ambulancia') + (ambProc ? (' (' + ambProc + ')') : '') + ' · ' + ambEstado;
     const reg = {
       id: document.getElementById('clf-id').value||'—',
       edad: parseInt(document.getElementById('clf-edad').value)||null,
       usuarioId: usuarioActivo?.id||null,
       usuarioNombre: usuarioActivo?.nombre||null,
       motivo: clfMotivo,
-      motivoTexto: document.getElementById('clf-motivo-txt').value,
+      motivoEspecifico: esp,
+      observaciones: obs,
+      motivoTexto: motivoTexto,
       avpu: clfAVPU||'A',
       spo2: document.getElementById('clf-spo2').value,
       fr:   document.getElementById('clf-fr').value,
@@ -2376,11 +2415,23 @@
       nivelSugerido: clfNivelSug,
       discriminadores: clfDisc,
       override: !!override,
+      overrideMotivo: overrideMotivo,
+      formaLlegada: llegada,
+      ambulancia: (llegada === 'Ambulancia') ? { identificacion: ambId, procedencia: ambProc, estado: ambEstado } : null,
       fecha: new Date().toISOString(),
     };
     const datos = JSON.parse(localStorage.getItem('sut_pacientes')||'[]');
     datos.push(reg);
     localStorage.setItem('sut_pacientes', JSON.stringify(datos));
+    if (llegada === 'Ambulancia') {
+      try {
+        const amb = JSON.parse(localStorage.getItem('sut_ambulancias')||'[]');
+        amb.push({ id: Date.now(), nombre: (document.getElementById('clf-id').value||esp), patologia: esp, horaAviso: reg.fecha, procedencia: ambProc, identificacion: ambId,
+          estado: ambEstado==='Atendido inmediato' ? 'ingresado' : 'esperando',
+          horaIngreso: ambEstado==='Atendido inmediato' ? reg.fecha : null, horaCancelado: null });
+        localStorage.setItem('sut_ambulancias', JSON.stringify(amb));
+      } catch(e){}
+    }
     mostrarResumenPaciente(reg);
     mostrarAlertaCritica(reg);
   }
@@ -2388,10 +2439,16 @@
   function resetClasificacion() {
     clfMotivo=null; clfAVPU=null; clfDolor=null; clfNivelSug=null; clfDisc=[];
     document.querySelectorAll('.motivo-btn,.avpu-btn,.pain-btn').forEach(b=>b.classList.remove('selected'));
-    ['clf-id','clf-edad','clf-motivo-txt','clf-spo2','clf-fr','clf-pas','clf-pad','clf-fc','clf-temp'].forEach(id=>{
+    ['clf-id','clf-edad','clf-obs','clf-spo2','clf-fr','clf-pas','clf-pad','clf-fc','clf-temp','clf-amb-id','clf-amb-proc'].forEach(id=>{
       const el=document.getElementById(id); if(el) el.value='';
     });
+    const ms=document.getElementById('clf-motivo-sel'); if(ms) ms.selectedIndex=0;
+    const obs=document.getElementById('clf-obs'); if(obs) obs.style.borderColor='';
     const ov=document.getElementById('override-nivel'); if(ov) ov.value='';
+    const ovm=document.getElementById('override-motivo-wrap'); if(ovm) ovm.style.display='none';
+    const ovmt=document.getElementById('override-motivo'); if(ovmt) ovmt.value='';
+    const ll=document.getElementById('clf-llegada'); if(ll) ll.value='Ambulatorio';
+    const af=document.getElementById('clf-amb-fields'); if(af) af.style.display='none';
     irPaso(1);
   }
 
@@ -5038,7 +5095,7 @@
 
       const idEl = document.getElementById('clf-id');
       if (idEl) idEl.value = amb.nombre;
-      const motEl = document.getElementById('clf-motivo-txt');
+      const motEl = document.getElementById('clf-obs');
       if (motEl && amb.patologia) motEl.value = amb.patologia;
       if (idEl) idEl.focus();
     };
@@ -5068,5 +5125,6 @@
 </script>
 <div id="alerta-critica-container" aria-live="assertive" aria-atomic="false"></div>
 <div id="alerta-timer-container" aria-live="polite" aria-atomic="false"></div>
+<footer style="text-align:center;padding:16px 12px;font-size:0.72rem;color:var(--text-muted);line-height:1.5">© 2026 Dr. M. D. S. y col. · SUT Triage · Todos los derechos reservados · Uso clínico exclusivo</footer>
 </body>
 </html>
