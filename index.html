@@ -1404,13 +1404,12 @@
               </optgroup>
             </select>
           </div>
-          <div class="vital-field" style="max-width:280px">
-            <label for="clf-llegada">Forma de llegada <span style="color:var(--rojo)">*</span></label>
-            <select id="clf-llegada" onchange="onLlegada()">
-              <option value="">— Seleccioná —</option>
-              <option value="Ambulatorio">Ambulatorio</option>
-              <option value="Ambulancia">Ambulancia</option>
-            </select>
+          <div class="vital-field" style="max-width:360px">
+            <label>Forma de llegada <span style="color:var(--rojo)">*</span></label>
+            <div id="clf-llegada-btns" style="display:flex;gap:0.6rem;margin-top:0.15rem">
+              <button type="button" id="btn-llegada-amb" onclick="selLlegada('Ambulatorio')" style="flex:1;padding:0.7rem 0.5rem;border:2px solid var(--border);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-weight:700;cursor:pointer;font-size:0.9rem">🚶 Ambulatorio</button>
+              <button type="button" id="btn-llegada-ambu" onclick="selLlegada('Ambulancia')" style="flex:1;padding:0.7rem 0.5rem;border:2px solid var(--border);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-weight:700;cursor:pointer;font-size:0.9rem">🚑 Ambulancia</button>
+            </div>
           </div>
           <div class="vital-field">
             <label for="clf-obs">Observaciones <span style="color:var(--text-muted);font-weight:400;font-size:0.72rem">(opcional)</span></label>
@@ -2220,6 +2219,7 @@
 
   // ─── CLASIFICACIÓN ──────────────────────────────────────────
   let clfMotivo = null, clfAVPU = null, clfDolor = null, clfNivelSug = null, clfDisc = [];
+  window.clfLlegada = null; window.clfAmbData = null; window.clfAmbMode = false;
 
   const NIVELES_INFO = {
     1: { name:'Emergencia',            tiempo:'Atención inmediata (0 min)', cls:'rc-1', emoji:'🔴' },
@@ -2263,13 +2263,19 @@
     const obs = document.getElementById('clf-obs');
     if (obs) obs.style.borderColor = '';
   }
-  function onLlegada() {
-    const v = document.getElementById('clf-llegada').value;
-    if (v === 'Ambulancia') { document.getElementById('modal-clf-amb').style.display = 'flex'; }
+  function pintarLlegada(v) {
+    const a = document.getElementById('btn-llegada-amb'), b = document.getElementById('btn-llegada-ambu');
+    if (!a || !b) return;
+    a.style.borderColor='var(--border)'; a.style.background='var(--bg2)'; a.style.color='var(--text)';
+    b.style.borderColor='var(--border)'; b.style.background='var(--bg2)'; b.style.color='var(--text)';
+    if (v === 'Ambulatorio') { a.style.borderColor='var(--verde)'; a.style.background='rgba(34,197,94,0.15)'; a.style.color='var(--verde)'; }
+    else if (v === 'Ambulancia') { b.style.borderColor='var(--rojo)'; b.style.background='rgba(239,68,68,0.15)'; b.style.color='var(--rojo)'; }
   }
-  function cerrarModalAmb(cancelar) {
-    document.getElementById('modal-clf-amb').style.display = 'none';
-    if (cancelar) { document.getElementById('clf-llegada').value = 'Ambulatorio'; }
+  function selLlegada(v) {
+    window.clfLlegada = v;
+    pintarLlegada(v);
+    if (v === 'Ambulatorio') { window.clfAmbData = null; }
+    else if (v === 'Ambulancia') { if (typeof abrirAmbulanciaClf === 'function') abrirAmbulanciaClf(); }
   }
 
   function selectAVPU(btn) {
@@ -2289,7 +2295,7 @@
   function irPaso2() {
     const sel = document.getElementById('clf-motivo-sel');
     if (!sel.value) { alert('Seleccioná un motivo de consulta antes de continuar.'); return; }
-    if (!document.getElementById('clf-llegada').value) { alert('Seleccioná la forma de llegada antes de continuar.'); return; }
+    if (!window.clfLlegada) { alert('Seleccioná la forma de llegada antes de continuar.'); return; }
     irPaso(2);
   }
 
@@ -2382,12 +2388,10 @@
       if (!overrideMotivo) { alert('Indicá el motivo del cambio de clasificación antes de guardar.'); document.getElementById('override-motivo').focus(); return; }
     }
     const nivelFinal = override ? parseInt(override) : clfNivelSug;
-    const llegada  = document.getElementById('clf-llegada').value;
-    const ambId    = document.getElementById('clf-amb-id').value.trim();
-    const ambProc  = document.getElementById('clf-amb-proc').value.trim();
-    const ambEstado= document.getElementById('clf-amb-estado').value;
+    const llegada = window.clfLlegada || 'Ambulatorio';
+    const amb     = window.clfAmbData;
     let motivoTexto = esp + (obs ? ' — Obs: ' + obs : '');
-    if (llegada === 'Ambulancia') motivoTexto += ' · 🚑 ' + (ambId || 'Ambulancia') + (ambProc ? (' (' + ambProc + ')') : '') + ' · ' + ambEstado;
+    if (llegada === 'Ambulancia' && amb) motivoTexto += ' · 🚑 ' + (amb.nombre || 'Ambulancia') + (amb.procedencia ? (' (' + amb.procedencia + ')') : '') + ' · ' + amb.estado;
     const reg = {
       id: document.getElementById('clf-id').value||'—',
       edad: parseInt(document.getElementById('clf-edad').value)||null,
@@ -2411,19 +2415,19 @@
       override: !!override,
       overrideMotivo: overrideMotivo,
       formaLlegada: llegada,
-      ambulancia: (llegada === 'Ambulancia') ? { identificacion: ambId, procedencia: ambProc, estado: ambEstado } : null,
+      ambulancia: (llegada === 'Ambulancia' && amb) ? { paciente: amb.nombre, patologia: amb.patologia, procedencia: amb.procedencia, horaAviso: amb.horaAviso, estado: amb.estado } : null,
       fecha: new Date().toISOString(),
     };
     const datos = JSON.parse(localStorage.getItem('sut_pacientes')||'[]');
     datos.push(reg);
     localStorage.setItem('sut_pacientes', JSON.stringify(datos));
-    if (llegada === 'Ambulancia') {
+    if (llegada === 'Ambulancia' && amb) {
       try {
-        const amb = JSON.parse(localStorage.getItem('sut_ambulancias')||'[]');
-        amb.push({ id: Date.now(), nombre: (document.getElementById('clf-id').value||esp), patologia: esp, horaAviso: reg.fecha, procedencia: ambProc, identificacion: ambId,
-          estado: ambEstado==='Atendido inmediato' ? 'ingresado' : 'esperando',
-          horaIngreso: ambEstado==='Atendido inmediato' ? reg.fecha : null, horaCancelado: null });
-        localStorage.setItem('sut_ambulancias', JSON.stringify(amb));
+        const lista = JSON.parse(localStorage.getItem('sut_ambulancias')||'[]');
+        lista.push({ id: Date.now(), nombre: amb.nombre || esp, patologia: amb.patologia || esp, horaAviso: amb.horaAviso || reg.fecha, procedencia: amb.procedencia,
+          estado: amb.estado==='Atendido inmediato' ? 'ingresado' : 'esperando',
+          horaIngreso: amb.estado==='Atendido inmediato' ? reg.fecha : null, horaCancelado: null });
+        localStorage.setItem('sut_ambulancias', JSON.stringify(lista));
       } catch(e){}
     }
     mostrarResumenPaciente(reg);
@@ -2433,7 +2437,7 @@
   function resetClasificacion() {
     clfMotivo=null; clfAVPU=null; clfDolor=null; clfNivelSug=null; clfDisc=[];
     document.querySelectorAll('.motivo-btn,.avpu-btn,.pain-btn').forEach(b=>b.classList.remove('selected'));
-    ['clf-id','clf-edad','clf-obs','clf-spo2','clf-fr','clf-pas','clf-pad','clf-fc','clf-temp','clf-amb-id','clf-amb-proc'].forEach(id=>{
+    ['clf-id','clf-edad','clf-obs','clf-spo2','clf-fr','clf-pas','clf-pad','clf-fc','clf-temp'].forEach(id=>{
       const el=document.getElementById(id); if(el) el.value='';
     });
     const ms=document.getElementById('clf-motivo-sel'); if(ms) ms.selectedIndex=0;
@@ -2441,9 +2445,9 @@
     const ov=document.getElementById('override-nivel'); if(ov) ov.value='';
     const ovm=document.getElementById('override-motivo-wrap'); if(ovm) ovm.style.display='none';
     const ovmt=document.getElementById('override-motivo'); if(ovmt) ovmt.value='';
-    const ll=document.getElementById('clf-llegada'); if(ll) ll.value='';
-    const mam=document.getElementById('modal-clf-amb'); if(mam) mam.style.display='none';
-    const ae=document.getElementById('clf-amb-estado'); if(ae) ae.selectedIndex=0;
+    window.clfLlegada=null; window.clfAmbData=null; window.clfAmbMode=false;
+    if(typeof pintarLlegada==='function') pintarLlegada(null);
+    const aw=document.getElementById('amb-estado-wrap'); if(aw) aw.style.display='none';
     irPaso(1);
   }
 
@@ -5028,18 +5032,54 @@
       }
     }
 
-    window.abrirAmbulancias = function() {
+    function _abrirAmbBase() {
       document.getElementById('modal-ambulancias').classList.add('active');
       const now = new Date();
       const ha = document.getElementById('amb-hora-aviso');
       if (ha && !ha.value)
         ha.value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
       renderAmbulancias();
+    }
+
+    window.abrirAmbulancias = function() {
+      window.clfAmbMode = false;
+      const w = document.getElementById('amb-estado-wrap'); if (w) w.style.display = 'none';
+      const b = document.getElementById('btn-reg-amb'); if (b) b.textContent = '🚑 Registrar ambulancia';
+      _abrirAmbBase();
+    };
+
+    window.abrirAmbulanciaClf = function() {
+      window.clfAmbMode = true;
+      window.clfAmbData = null;
+      const w = document.getElementById('amb-estado-wrap'); if (w) w.style.display = '';
+      const es = document.getElementById('amb-estado-llegar'); if (es) es.selectedIndex = 0;
+      const b = document.getElementById('btn-reg-amb'); if (b) b.textContent = '✓ Confirmar llegada';
+      _abrirAmbBase();
+      const n = document.getElementById('amb-nombre'); if (n) n.focus();
     };
 
     window.cerrarAmbulancias = function() {
       document.getElementById('modal-ambulancias').classList.remove('active');
+      if (window.clfAmbMode) {
+        window.clfAmbMode = false;
+        const w = document.getElementById('amb-estado-wrap'); if (w) w.style.display = 'none';
+        if (!window.clfAmbData) {
+          window.clfLlegada = null;
+          if (typeof pintarLlegada === 'function') pintarLlegada(null);
+        }
+      }
     };
+
+    function _limpiarFormAmb() {
+      ['amb-nombre','amb-patologia','amb-procedencia'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = '';
+      });
+      const ha = document.getElementById('amb-hora-aviso');
+      if (ha) {
+        const n = new Date();
+        ha.value = `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+      }
+    }
 
     window.registrarAmbulancia = function() {
       const nombre = document.getElementById('amb-nombre').value.trim();
@@ -5050,19 +5090,45 @@
       const today        = new Date().toLocaleDateString('sv-SE');
       const isoAviso     = horaAviso ? new Date(`${today}T${horaAviso}`).toISOString() : new Date().toISOString();
 
+      // Modo clasificación: forma de llegada = Ambulancia
+      if (window.clfAmbMode) {
+        const estado = document.getElementById('amb-estado-llegar').value;
+        window.clfLlegada = 'Ambulancia';
+        window.clfAmbData = { nombre, patologia, procedencia, horaAviso: isoAviso, estado };
+
+        if (estado === 'Espera afuera') {
+          // Registra en lista de espera y NO continúa el triage
+          const arr = getAmbulancias();
+          arr.push({ id: Date.now(), nombre, patologia, horaAviso: isoAviso, procedencia,
+                     estado: 'esperando', horaIngreso: null, horaCancelado: null });
+          saveAmbulancias(arr);
+          renderAmbulancias();
+          actualizarBadge();
+          window.clfAmbMode = false;
+          window.clfAmbData = null;
+          const w = document.getElementById('amb-estado-wrap'); if (w) w.style.display = 'none';
+          _limpiarFormAmb();
+          document.getElementById('modal-ambulancias').classList.remove('active');
+          if (typeof resetClasificacion === 'function') resetClasificacion();
+          if (typeof mostrarToast === 'function') mostrarToast('🚑 Ambulancia registrada en espera', 4);
+          return;
+        }
+
+        // Atendido inmediato: cierra el panel y continúa el triage
+        window.clfAmbMode = false;
+        const w = document.getElementById('amb-estado-wrap'); if (w) w.style.display = 'none';
+        _limpiarFormAmb();
+        document.getElementById('modal-ambulancias').classList.remove('active');
+        if (typeof pintarLlegada === 'function') pintarLlegada('Ambulancia');
+        return;
+      }
+
+      // Modo autónomo (módulo de ambulancias)
       const arr = getAmbulancias();
       arr.push({ id: Date.now(), nombre, patologia, horaAviso: isoAviso, procedencia,
                  estado: 'esperando', horaIngreso: null, horaCancelado: null });
       saveAmbulancias(arr);
-
-      ['amb-nombre','amb-patologia','amb-procedencia'].forEach(id => {
-        const el = document.getElementById(id); if (el) el.value = '';
-      });
-      const ha = document.getElementById('amb-hora-aviso');
-      if (ha) {
-        const n = new Date();
-        ha.value = `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
-      }
+      _limpiarFormAmb();
       renderAmbulancias();
       actualizarBadge();
       document.getElementById('amb-nombre').focus();
@@ -5149,8 +5215,15 @@
             <label>Procedencia (opcional)</label>
             <input type="text" id="amb-procedencia" placeholder="Centro que traslada" autocomplete="off" />
           </div>
+          <div class="vital-field" id="amb-estado-wrap" style="display:none;grid-column:1/-1">
+            <label>Estado al llegar</label>
+            <select id="amb-estado-llegar" style="width:100%">
+              <option value="Atendido inmediato">Atendido inmediato</option>
+              <option value="Espera afuera">Espera afuera</option>
+            </select>
+          </div>
         </div>
-        <button class="btn-next" style="margin-top:0.8rem;width:100%" onclick="registrarAmbulancia()">🚑 Registrar ambulancia</button>
+        <button class="btn-next" id="btn-reg-amb" style="margin-top:0.8rem;width:100%" onclick="registrarAmbulancia()">🚑 Registrar ambulancia</button>
       </div>
 
       <div>
@@ -5169,18 +5242,6 @@
   </div>
 </div>
 <!-- MODAL FORMA DE LLEGADA — AMBULANCIA -->
-<div id="modal-clf-amb" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center;padding:1rem" onclick="if(event.target===this)cerrarModalAmb(true)">
-  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);max-width:420px;width:100%;padding:1.4rem;box-shadow:var(--shadow)">
-    <h3 style="margin-bottom:1rem">🚑 Datos de la ambulancia</h3>
-    <div class="vital-field" style="margin-bottom:0.8rem"><label for="clf-amb-id">Identificación de la ambulancia</label><input type="text" id="clf-amb-id" autocomplete="off" placeholder="Ej: SEM 12" style="width:100%" /></div>
-    <div class="vital-field" style="margin-bottom:0.8rem"><label for="clf-amb-proc">Procedencia</label><input type="text" id="clf-amb-proc" autocomplete="off" placeholder="Centro que traslada" style="width:100%" /></div>
-    <div class="vital-field" style="margin-bottom:1.1rem"><label for="clf-amb-estado">Estado al llegar</label><select id="clf-amb-estado" style="width:100%"><option value="Atendido inmediato">Atendido inmediato</option><option value="Espera afuera">Espera afuera</option></select></div>
-    <div style="display:flex;gap:0.6rem;justify-content:flex-end">
-      <button class="btn-prev" onclick="cerrarModalAmb(true)">Cancelar</button>
-      <button class="btn-next" onclick="cerrarModalAmb(false)">Confirmar</button>
-    </div>
-  </div>
-</div>
 <footer style="text-align:center;padding:16px 12px;font-size:0.72rem;color:var(--text-muted);line-height:1.5">© 2026 Dr. M. D. S. y col. · SUT Triage · Todos los derechos reservados · Uso clínico exclusivo</footer>
 </body>
 </html>
