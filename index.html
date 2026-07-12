@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SUT — Sistema Uruguayo de Triage</title>
+  <title>SIT Triage — Sistema Integrado de Triage</title>
   <script>(function(){var t=localStorage.getItem('sut_theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
   <style>
     /* ─── TOKENS ─────────────────────────────────────────────── */
@@ -73,19 +73,24 @@
       justify-content: center;
       min-height: 100vh;
       padding: 2rem;
-      background: radial-gradient(ellipse at 50% 0%, #1a2a3a 0%, var(--bg) 70%);
+      background: linear-gradient(135deg, #5c1212 0%, #3d0a0a 55%, #260505 100%);
     }
 
     .welcome-card {
-      background: var(--bg2);
-      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.055);
+      border: 1px solid rgba(251,146,60,0.28);
       border-radius: 18px;
-      padding: 3rem 3.5rem;
-      max-width: 600px;
+      padding: 2.4rem 2.6rem;
+      max-width: 420px;
       width: 100%;
-      box-shadow: var(--shadow), 0 0 60px var(--accent-glow);
+      box-shadow: 0 24px 70px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+      backdrop-filter: blur(10px);
       text-align: center;
     }
+    @keyframes ambBounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+    @keyframes ambBlink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0.25; } }
+    #sit-amb { animation: ambBounce 1.1s ease-in-out infinite; }
+    #sit-amb .beacon { animation: ambBlink 0.6s steps(1) infinite; }
 
     .sut-badge {
       display: inline-flex;
@@ -200,18 +205,19 @@
     }
 
     .btn-ingresar {
-      background: var(--azul);
+      background: linear-gradient(135deg,#f97316,#dc2626);
       color: #fff;
       border: none;
       border-radius: var(--radius);
       padding: 0.75rem 1.4rem;
       font-size: 0.95rem;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
+      transition: filter 0.2s, transform 0.1s;
       white-space: nowrap;
+      box-shadow: 0 6px 18px rgba(220,38,38,0.4);
     }
-    .btn-ingresar:hover { background: #1f5aa0; }
+    .btn-ingresar:hover { filter: brightness(1.08); }
     .btn-ingresar:active { transform: scale(0.97); }
 
     .error-msg {
@@ -1086,30 +1092,23 @@
 <div id="screen-welcome">
   <div class="welcome-card">
 
-    <div class="sut-badge">
-      <span class="dot"></span>
-      Sistema Uruguayo de Triage
-    </div>
-
-    <h1>SUT <span class="highlight">Triage</span></h1>
-    <p class="welcome-subtitle">
-      Clasificación asistencial estructurada y estandarizada<br>
-      basada en el Sistema Uruguayo de Triage
-    </p>
-
-    <div class="color-strip">
-      <div class="cs-r"></div>
-      <div class="cs-o"></div>
-      <div class="cs-y"></div>
-      <div class="cs-g"></div>
-      <div class="cs-b"></div>
-    </div>
-
-    <div class="frase">
-      <strong>"Clasificar es proteger."</strong><br>
-      El triage no es un diagnóstico — es el primer acto de justicia sanitaria.
-      Atender primero a quien más lo necesita es la mejor medicina.
-    </div>
+    <svg id="sit-amb" width="122" height="80" viewBox="0 0 132 86" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:0 auto 10px;filter:drop-shadow(0 4px 14px rgba(220,38,38,.45))">
+      <rect class="beacon" x="40" y="15" width="16" height="7" rx="2.5" fill="#f87171"/>
+      <line x1="48" y1="22" x2="48" y2="26" stroke="#fb923c" stroke-width="2"/>
+      <rect x="12" y="26" width="66" height="34" rx="5" fill="#f8fafc" stroke="#fb923c" stroke-width="2.5"/>
+      <path d="M78 35 h15 l15 12 v13 h-30 z" fill="#f8fafc" stroke="#fb923c" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M82 39 h9 l10 8 h-19 z" fill="#fed7aa" opacity=".85"/>
+      <rect x="12" y="50" width="96" height="5" fill="#f97316" opacity=".85"/>
+      <rect x="38" y="31" width="6.5" height="18" rx="1.5" fill="#dc2626"/>
+      <rect x="31.75" y="37.25" width="19" height="6.5" rx="1.5" fill="#dc2626"/>
+      <circle cx="34" cy="62" r="9" fill="#1f2937"/>
+      <circle cx="92" cy="62" r="9" fill="#1f2937"/>
+      <circle cx="34" cy="62" r="3.5" fill="#cbd5e1"/>
+      <circle cx="92" cy="62" r="3.5" fill="#cbd5e1"/>
+    </svg>
+    <div style="font-family:var(--font-display);font-size:2.6rem;font-weight:800;letter-spacing:-1px;line-height:1;color:#ff6a3d;text-shadow:0 0 22px rgba(249,115,22,.55)">SIT Triage</div>
+    <div style="font-size:1.05rem;color:#ffffff;font-weight:600;margin-top:6px">Sistema Integrado de Triage</div>
+    <div style="font-size:0.82rem;color:#fdba74;opacity:.9;font-weight:500;letter-spacing:.5px;margin-top:5px;margin-bottom:1.6rem">EasyMed</div>
 
     <div class="password-section">
       <label for="input-pass">Contraseña de acceso</label>
@@ -1143,7 +1142,7 @@
     </h2>
 
     <p>
-      <strong>SUT Triage</strong> es una herramienta de apoyo a la clasificación clínica
+      <strong>SIT Triage — Sistema Integrado de Triage</strong> es una herramienta de apoyo a la clasificación clínica
       y no reemplaza el juicio del profesional de salud. Su contenido tiene carácter
       orientativo y puede contener inexactitudes.
     </p>
@@ -1154,7 +1153,7 @@
     </p>
 
     <p>
-      <strong>SUT Triage no se responsabiliza por la confidencialidad de los datos ingresados.</strong>
+      <strong>SIT Triage — Sistema Integrado de Triage no se responsabiliza por la confidencialidad de los datos ingresados.</strong>
       La seguridad y el resguardo de la información son responsabilidad exclusiva
       del usuario y de la institución que utiliza el sistema.
     </p>
@@ -1224,8 +1223,8 @@
         </span>
       </div>
       <h2>
-        SUT Triage
-        <small>Sistema Uruguayo de Triage</small>
+        SIT Triage — Sistema Integrado de Triage
+        <small>Sistema Integrado de Triage</small>
         <small id="header-centro"></small>
       </h2>
     </div>
@@ -1955,7 +1954,7 @@
 
   <!-- FOOTER -->
   <footer class="app-footer">
-    <span>SUT Triage v1.0 — Sistema Uruguayo de Triage · 2025</span>
+    <span>SIT Triage v1.0 — Sistema Integrado de Triage · 2025</span>
     <span>Los datos se almacenan localmente en este dispositivo</span>
   </footer>
 
@@ -2117,7 +2116,7 @@
   (function(){ updateThemeBtn(document.documentElement.getAttribute('data-theme')||'light'); })();
 
   // ─── CONTRASEÑA ─────────────────────────────────────────────
-  const PASS = 'suttriage1';
+  const PASS = 'sittriage1';
 
   function checkPass() {
     const val = document.getElementById('input-pass').value;
@@ -2699,7 +2698,7 @@
     const cfg = getCentroInfo();
     const centro = cfg && cfg.centro ? ' — ' + cfg.centro : '';
     const fecha = new Date().toLocaleString('es-UY', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-    const text = 'Generado por SUT Triage v1.0' + centro + ' — ' + fecha;
+    const text = 'Generado por SIT Triage v1.0' + centro + ' — ' + fecha;
     const pageH = doc.internal.pageSize.height;
     const pageW = doc.internal.pageSize.width;
     doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.setTextColor(150);
@@ -2711,7 +2710,7 @@
   function pdfHeader(doc, titulo, subtitulo) {
     const cfg = getCentroInfo();
     doc.setFontSize(14); doc.setFont('helvetica','bold');
-    doc.text('SUT Triage — ' + titulo, 14, 16);
+    doc.text('SIT Triage — Sistema Integrado de Triage — ' + titulo, 14, 16);
     let y = 23;
     doc.setFontSize(8.5); doc.setFont('helvetica','normal'); doc.setTextColor(100);
     if (cfg && cfg.centro) {
@@ -3015,7 +3014,7 @@
     // ── ENCABEZADO ────────────────────────────────────────────────
     const cfg = getCentroInfo();
     doc.setFontSize(15); doc.setFont('helvetica','bold'); doc.setTextColor(30,70,140);
-    doc.text('SUT — Sistema Uruguayo de Triage', 14, 15);
+    doc.text('SIT Triage — Sistema Integrado de Triage', 14, 15);
     doc.setFontSize(9.5); doc.setFont('helvetica','normal'); doc.setTextColor(90);
     doc.text('Informe Estadístico', 14, 22);
     let y = 28;
@@ -3840,7 +3839,7 @@
   }
   function confirmarAdminPass() {
     const val=document.getElementById('adm-pass-input').value;
-    if (val!=='suttriage0') {
+    if (val!=='sittriage1') {
       document.getElementById('adm-pass-err').textContent='Contraseña incorrecta';
       document.getElementById('adm-pass-input').value='';
       document.getElementById('adm-pass-input').classList.add('error');
@@ -4420,7 +4419,7 @@
       });
     }
     doc.setFontSize(7); doc.setTextColor(150);
-    doc.text(`${ss.length} sesión${ss.length!==1?'es':''} | SUT Triage | ${new Date().toLocaleString('es-UY')}`, 14, doc.internal.pageSize.height-8);
+    doc.text(`${ss.length} sesión${ss.length!==1?'es':''} | SIT Triage — Sistema Integrado de Triage | ${new Date().toLocaleString('es-UY')}`, 14, doc.internal.pageSize.height-8);
     doc.save(`sut-sesiones-${new Date().toISOString().split('T')[0]}.pdf`);
   }
 
@@ -4556,7 +4555,7 @@
       });
     }
     doc.setFontSize(7); doc.setTextColor(150);
-    doc.text(`SUT Triage | Auditoría de Tiempos | ${new Date().toLocaleString('es-UY')}`, 14, doc.internal.pageSize.height-8);
+    doc.text(`SIT Triage — Sistema Integrado de Triage | Auditoría de Tiempos | ${new Date().toLocaleString('es-UY')}`, 14, doc.internal.pageSize.height-8);
     doc.save(`sut-auditoria-tiempos-${new Date().toISOString().split('T')[0]}.pdf`);
   }
 
@@ -5331,7 +5330,7 @@
   </div>
 </div>
 <!-- MODAL FORMA DE LLEGADA — AMBULANCIA -->
-<footer style="text-align:center;padding:16px 12px;font-size:0.72rem;color:var(--text-muted);line-height:1.5">© 2026 Dr. M. D. S. y col. · SUT Triage · Todos los derechos reservados · Uso clínico exclusivo</footer>
+<footer style="text-align:center;padding:16px 12px;font-size:0.72rem;color:var(--text-muted);line-height:1.5">© 2026 Dr. M. D. S. y col. · SIT Triage — Sistema Integrado de Triage · Todos los derechos reservados · Uso clínico exclusivo</footer>
 
 <!-- ═══════════════ SAOTE — Sistema de Apoyo al Operador Telefónico de Emergencias ═══════════════ -->
 <script>
