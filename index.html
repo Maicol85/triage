@@ -1082,6 +1082,40 @@
     #pdf-custom-range {
       display: none; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.6rem;
     }
+    /* ─── ALERTAS DE TIEMPO VENCIDO (mejoradas) ─── */
+    @keyframes rowVencidaBlink {
+      0%, 100% { background: rgba(214,40,40,0.12); }
+      50%      { background: rgba(214,40,40,0.60); }
+    }
+    tr.pac-row-vencida > td { animation: rowVencidaBlink 0.85s steps(1,end) infinite; }
+    tr.pac-row-vencida > td:first-child { box-shadow: inset 5px 0 0 #d62828; }
+    .pac-retraso {
+      display: block; margin-top: 4px; font-size: 0.7rem; font-weight: 800; color: #fff;
+      background: #d62828; border-radius: 6px; padding: 2px 7px; white-space: nowrap;
+      box-shadow: 0 1px 5px rgba(214,40,40,0.55);
+    }
+    #tv-banner {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 9500;
+      display: none; align-items: center; justify-content: center; gap: 1rem;
+      padding: 0.85rem 1.2rem;
+      background: linear-gradient(90deg,#c1121f,#e5383b,#c1121f);
+      color: #fff; box-shadow: 0 6px 24px rgba(180,0,0,0.6);
+      animation: tvBannerPulse 1s ease-in-out infinite;
+      border-bottom: 3px solid #7a0a12;
+    }
+    #tv-banner.on { display: flex; }
+    #tv-banner .tv-ico { font-size: 1.8rem; line-height: 1; flex-shrink: 0; }
+    #tv-banner .tv-txt { font-size: 1.15rem; font-weight: 800; letter-spacing: 0.3px; text-align: center; text-shadow: 0 1px 3px rgba(0,0,0,0.35); }
+    #tv-banner .tv-txt b { font-size: 1.28rem; }
+    #tv-banner .tv-count { background: rgba(0,0,0,0.28); border-radius: 20px; padding: 3px 13px; font-size: 0.82rem; font-weight: 700; flex-shrink: 0; white-space: nowrap; }
+    #tv-banner .tv-silencio { background: #fff; color: #c1121f; border: none; border-radius: 8px; padding: 0.5rem 0.95rem; font-size: 0.82rem; font-weight: 800; cursor: pointer; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
+    #tv-banner .tv-silencio:hover { background: #ffe3e3; }
+    #tv-banner.silenciado { animation: none; background: linear-gradient(90deg,#8a1a22,#a83e42,#8a1a22); }
+    @keyframes tvBannerPulse { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.24); } }
+    @media (max-width: 640px) {
+      #tv-banner { flex-wrap: wrap; gap: 0.5rem; padding: 0.6rem 0.8rem; }
+      #tv-banner .tv-txt { font-size: 0.98rem; }
+    }
   </style>
 </head>
 <body>
@@ -1247,6 +1281,25 @@
     </div>
   </header>
 
+  <!-- BOTÓN FLOTANTE SAOTE -->
+  <style>
+    @keyframes saotePulse {
+      0%   { box-shadow: 0 8px 22px rgba(0,200,83,0.45), 0 0 0 0 rgba(0,200,83,0.55); }
+      70%  { box-shadow: 0 8px 26px rgba(0,200,83,0.55), 0 0 0 16px rgba(0,200,83,0); }
+      100% { box-shadow: 0 8px 22px rgba(0,200,83,0.45), 0 0 0 0 rgba(0,200,83,0); }
+    }
+    #btn-saote-float { transition: transform .12s; }
+    #btn-saote-float:hover  { transform: scale(1.06); }
+    #btn-saote-float:active { transform: scale(0.95); }
+    @media (max-width: 640px) { #btn-saote-float { top: auto; bottom: 20px; right: 16px; } }
+  </style>
+  <button id="btn-saote-float" onclick="showTab('saote', this); saoteRender()"
+    title="SAOTE — Sistema de Apoyo al Operador Telefónico de Emergencias" aria-label="Abrir SAOTE"
+    style="position:fixed;top:116px;right:22px;z-index:850;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;width:66px;height:66px;border-radius:50%;background:#00c853;color:#fff;border:none;cursor:pointer;box-shadow:0 8px 22px rgba(0,200,83,0.5);animation:saotePulse 1.8s ease-in-out infinite;">
+    <span style="font-size:1.7rem;line-height:1">📞</span>
+    <span style="font-size:0.55rem;font-weight:800;letter-spacing:0.4px;line-height:1;margin-top:1px">SAOTE</span>
+  </button>
+
   <!-- NAVEGACIÓN -->
   <nav class="app-nav">
     <button class="nav-tab active" onclick="showTab('dashboard', this)">
@@ -1260,9 +1313,6 @@
     </button>
     <button class="nav-tab" onclick="showTab('estadisticas', this)">
       📈 Estadísticas
-    </button>
-    <button class="nav-tab" onclick="showTab('saote', this); saoteRender()">
-      📡 SAOTE
     </button>
     <button class="nav-tab" onclick="showTab('bibliografia', this)">
       📚 Bibliografía
@@ -1365,55 +1415,85 @@
             <label for="clf-motivo-sel">Motivo</label>
             <select id="clf-motivo-sel" onchange="onMotivoSel()">
               <option value="">— Seleccioná un motivo —</option>
-              <optgroup label="Cardiovascular / Respiratorio">
+              <optgroup label="Cardiovascular">
                 <option data-cat="cardio" value="Dolor torácico">Dolor torácico</option>
-                <option data-cat="cardio" value="Palpitaciones / Arritmia">Palpitaciones / Arritmia</option>
-                <option data-cat="cardio" value="Disnea / Dificultad respiratoria">Disnea / Dificultad respiratoria</option>
-                <option data-cat="cardio" value="Síncope / Pérdida de conocimiento">Síncope / Pérdida de conocimiento</option>
-                <option data-cat="cardio" value="HTA descompensada">HTA descompensada</option>
+                <option data-cat="cardio" value="Palpitaciones">Palpitaciones</option>
+                <option data-cat="cardio" value="Síncope / Presíncope">Síncope / Presíncope</option>
+                <option data-cat="cardio" value="Disnea / Falta de aire">Disnea / Falta de aire</option>
+                <option data-cat="cardio" value="Edemas en miembros inferiores">Edemas en miembros inferiores</option>
+                <option data-cat="cardio" value="Hipertensión arterial descompensada">Hipertensión arterial descompensada</option>
               </optgroup>
               <optgroup label="Neurológico">
-                <option data-cat="neuro" value="ACV / Déficit neurológico agudo">ACV / Déficit neurológico agudo</option>
                 <option data-cat="neuro" value="Cefalea intensa / súbita">Cefalea intensa / súbita</option>
+                <option data-cat="neuro" value="Mareos / Vértigo">Mareos / Vértigo</option>
+                <option data-cat="neuro" value="Pérdida de conciencia">Pérdida de conciencia</option>
                 <option data-cat="neuro" value="Convulsiones">Convulsiones</option>
-                <option data-cat="neuro" value="Alteración del sensorio / Confusión">Alteración del sensorio / Confusión</option>
+                <option data-cat="neuro" value="Debilidad / Parálisis facial o de miembros">Debilidad / Parálisis facial o de miembros</option>
+                <option data-cat="neuro" value="Alteración del habla">Alteración del habla</option>
+                <option data-cat="neuro" value="Confusión / Desorientación">Confusión / Desorientación</option>
               </optgroup>
-              <optgroup label="Trauma">
-                <option data-cat="trauma" value="Traumatismo craneoencefálico">Traumatismo craneoencefálico</option>
-                <option data-cat="trauma" value="Traumatismo de tórax / abdomen">Traumatismo de tórax / abdomen</option>
-                <option data-cat="trauma" value="Traumatismo de extremidades">Traumatismo de extremidades</option>
-                <option data-cat="trauma" value="Herida / Lesión cortante">Herida / Lesión cortante</option>
-                <option data-cat="trauma" value="Quemadura">Quemadura</option>
+              <optgroup label="Respiratorio">
+                <option data-cat="respiratorio" value="Dificultad respiratoria aguda">Dificultad respiratoria aguda</option>
+                <option data-cat="respiratorio" value="Tos con sangre (hemoptisis)">Tos con sangre (hemoptisis)</option>
+                <option data-cat="respiratorio" value="Crisis asmática">Crisis asmática</option>
+                <option data-cat="respiratorio" value="Saturación baja">Saturación baja</option>
               </optgroup>
               <optgroup label="Digestivo">
                 <option data-cat="digestivo" value="Dolor abdominal">Dolor abdominal</option>
                 <option data-cat="digestivo" value="Vómitos / Náuseas">Vómitos / Náuseas</option>
-                <option data-cat="digestivo" value="Diarrea">Diarrea</option>
-                <option data-cat="digestivo" value="Hemorragia digestiva">Hemorragia digestiva</option>
+                <option data-cat="digestivo" value="Diarrea con sangre">Diarrea con sangre</option>
+                <option data-cat="digestivo" value="Sangrado digestivo (hematemesis / melena)">Sangrado digestivo (hematemesis / melena)</option>
+                <option data-cat="digestivo" value="Ictericia">Ictericia</option>
+              </optgroup>
+              <optgroup label="Traumatológico">
+                <option data-cat="trauma" value="Trauma / Accidente">Trauma / Accidente</option>
+                <option data-cat="trauma" value="Fractura sospechada">Fractura sospechada</option>
+                <option data-cat="trauma" value="Luxación">Luxación</option>
+                <option data-cat="trauma" value="Herida cortante / Laceración">Herida cortante / Laceración</option>
+                <option data-cat="trauma" value="Quemadura">Quemadura</option>
+              </optgroup>
+              <optgroup label="Urológico / Ginecológico">
+                <option data-cat="urologico" value="Dolor lumbar / Cólico renal">Dolor lumbar / Cólico renal</option>
+                <option data-cat="urologico" value="Retención urinaria">Retención urinaria</option>
+                <option data-cat="gineco" value="Sangrado vaginal">Sangrado vaginal</option>
+                <option data-cat="gineco" value="Dolor pélvico">Dolor pélvico</option>
+                <option data-cat="gineco" value="Embarazo con complicación">Embarazo con complicación</option>
+              </optgroup>
+              <optgroup label="Infectológico">
+                <option data-cat="fiebre" value="Fiebre alta">Fiebre alta</option>
+                <option data-cat="fiebre" value="Infección de piel / Celulitis">Infección de piel / Celulitis</option>
+                <option data-cat="fiebre" value="Dolor de garganta intenso">Dolor de garganta intenso</option>
+                <option data-cat="fiebre" value="Síntomas respiratorios con fiebre">Síntomas respiratorios con fiebre</option>
+              </optgroup>
+              <optgroup label="Psiquiátrico / Conductual">
+                <option data-cat="psiquiatrico" value="Crisis de ansiedad / Pánico">Crisis de ansiedad / Pánico</option>
+                <option data-cat="psiquiatrico" value="Ideación suicida">Ideación suicida</option>
+                <option data-cat="psiquiatrico" value="Agitación psicomotriz">Agitación psicomotriz</option>
+                <option data-cat="intox" value="Intoxicación / Sobredosis">Intoxicación / Sobredosis</option>
+              </optgroup>
+              <optgroup label="Oftalmológico / ORL">
+                <option data-cat="otro" value="Pérdida visual súbita">Pérdida visual súbita</option>
+                <option data-cat="otro" value="Dolor ocular intenso">Dolor ocular intenso</option>
+                <option data-cat="otro" value="Epistaxis (sangrado nasal)">Epistaxis (sangrado nasal)</option>
+                <option data-cat="otro" value="Cuerpo extraño">Cuerpo extraño</option>
               </optgroup>
               <optgroup label="Otros">
-                <option data-cat="fiebre" value="Fiebre / Síndrome febril">Fiebre / Síndrome febril</option>
-                <option data-cat="otro" value="Dolor lumbar">Dolor lumbar</option>
-                <option data-cat="otro" value="Alergia / Reacción alérgica">Alergia / Reacción alérgica</option>
-                <option data-cat="intox" value="Intoxicación / Sobredosis">Intoxicación / Sobredosis</option>
-                <option data-cat="otro" value="Crisis diabética / Hipoglucemia">Crisis diabética / Hipoglucemia</option>
-                <option data-cat="otro" value="Epistaxis / Sangrado">Epistaxis / Sangrado</option>
-                <option data-cat="otro" value="Dolor ocular">Dolor ocular</option>
-                <option data-cat="gineco" value="Embarazo / Ginecológico">Embarazo / Ginecológico</option>
-                <option data-cat="psiquiatrico" value="Crisis psiquiátrica / Angustia">Crisis psiquiátrica / Angustia</option>
-                <option data-cat="urologico" value="Retención urinaria">Retención urinaria</option>
-                <option data-cat="otro" value="Otro">Otro</option>
+                <option data-cat="otro" value="Dolor agudo no especificado">Dolor agudo no especificado</option>
+                <option data-cat="otro" value="Reacción alérgica / Anafilaxia">Reacción alérgica / Anafilaxia</option>
+                <option data-cat="digestivo" value="Intoxicación alimentaria">Intoxicación alimentaria</option>
+                <option data-cat="otro" value="Mordedura / Picadura">Mordedura / Picadura</option>
+                <option data-cat="otro" value="Otro motivo">Otro motivo</option>
               </optgroup>
             </select>
           </div>
-          <div class="vital-field" style="max-width:360px">
+          <div class="vital-field" style="max-width:360px;margin-top:1.7rem">
             <label>Forma de llegada <span style="color:var(--rojo)">*</span></label>
             <div id="clf-llegada-btns" style="display:flex;gap:0.6rem;margin-top:0.15rem">
               <button type="button" id="btn-llegada-amb" onclick="selLlegada('Ambulatorio')" style="flex:1;padding:0.7rem 0.5rem;border:2px solid var(--border);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-weight:700;cursor:pointer;font-size:0.9rem">🚶 Ambulatorio</button>
               <button type="button" id="btn-llegada-ambu" onclick="selLlegada('Ambulancia')" style="flex:1;padding:0.7rem 0.5rem;border:2px solid var(--border);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-weight:700;cursor:pointer;font-size:0.9rem">🚑 Ambulancia</button>
             </div>
           </div>
-          <div class="vital-field">
+          <div class="vital-field" style="margin-top:1.7rem">
             <label for="clf-obs">Observaciones <span style="color:var(--text-muted);font-weight:400;font-size:0.72rem">(opcional)</span></label>
             <textarea id="clf-obs" rows="2" placeholder="Observaciones (opcional)..." style="width:100%;font-family:inherit"></textarea>
           </div>
@@ -2707,6 +2787,21 @@
     doc.setTextColor(0);
   }
 
+  // Copyright al pie de TODAS las páginas del PDF (se llama antes de doc.save)
+  function pdfCopyright(doc) {
+    try {
+      const total = doc.internal.getNumberOfPages();
+      const pw = doc.internal.pageSize.width;
+      const ph = doc.internal.pageSize.height;
+      for (let i = 1; i <= total; i++) {
+        doc.setPage(i);
+        doc.setFontSize(6.5); doc.setFont('helvetica','normal'); doc.setTextColor(150);
+        doc.text('© 2026 Dr. M. D. S. y col. · SIT Triage · Todos los derechos reservados · Uso clínico exclusivo', pw / 2, ph - 3.5, { align: 'center' });
+      }
+      doc.setTextColor(0);
+    } catch (e) {}
+  }
+
   function pdfHeader(doc, titulo, subtitulo) {
     const cfg = getCentroInfo();
     doc.setFontSize(14); doc.setFont('helvetica','bold');
@@ -2744,7 +2839,7 @@
       ];
     });
     doc.autoTable({startY,head:[['Fecha','Hora','Código','Motivo','Nivel final','Sug.','Modif.','AVPU','Dolor']],body:rows,styles:{fontSize:7.5,cellPadding:2},headStyles:{fillColor:[42,109,181],textColor:255,fontStyle:'bold'},alternateRowStyles:{fillColor:[245,245,250]}});
-    doc.save(`sut-pacientes-${new Date().toISOString().split('T')[0]}.pdf`);
+    pdfCopyright(doc); doc.save(`sut-pacientes-${new Date().toISOString().split('T')[0]}.pdf`);
   }
 
   // ─── TAB ESTADÍSTICAS ────────────────────────────────────────
@@ -3294,7 +3389,7 @@
 
     const pgCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pgCount; i++) { doc.setPage(i); addPdfFooter(doc); }
-    doc.save(`sut-estadisticas-${new Date().toISOString().split('T')[0]}.pdf`);
+    pdfCopyright(doc); doc.save(`sut-estadisticas-${new Date().toISOString().split('T')[0]}.pdf`);
   }
 
   // ─── MODAL EVA ───────────────────────────────────────────────
@@ -3522,7 +3617,7 @@
       didParseCell(data){ if(data.row.index===rows.length-1){ data.cell.styles.fontStyle='bold'; } }
     });
     const fname='sut-analisis-'+titulo.toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,40)+'-'+new Date().toISOString().split('T')[0]+'.pdf';
-    doc.save(fname);
+    pdfCopyright(doc); doc.save(fname);
   }
 
   // ─── SISTEMA DE USUARIOS ────────────────────────────────────
@@ -3815,7 +3910,7 @@
         doc.text('Sin clasificaciones en esta sesión.', 14, y);
       }
 
-      doc.save('sut-cierre-'+now.toISOString().split('T')[0]+'.pdf');
+      pdfCopyright(doc); doc.save('sut-cierre-'+now.toISOString().split('T')[0]+'.pdf');
     } catch(e) { /* silent fail */ }
   }
 
@@ -4363,7 +4458,7 @@
     const startY=pdfHeader(doc,'Registro de Sesiones',`Período: ${desde.toLocaleDateString('es-UY')} – ${hasta.toLocaleDateString('es-UY')}`);
     const fmtDT=d=>d?new Date(d).toLocaleString('es-UY',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'Activa';
     doc.autoTable({startY,head:[['Usuario','Rol','Apertura','Bloqueo','Duración']],body:ss.map(s=>[s.usuarioNombre||'—',labelRol(s.usuarioRol),fmtDT(s.apertura),fmtDT(s.bloqueo),s.duracionMin!=null?s.duracionMin+' min':'—']),styles:{fontSize:8,cellPadding:2.5},headStyles:{fillColor:[42,109,181],textColor:255,fontStyle:'bold'},alternateRowStyles:{fillColor:[245,245,250]}});
-    doc.save(`sut-sesiones-${new Date().toISOString().split('T')[0]}.pdf`);
+    pdfCopyright(doc); doc.save(`sut-sesiones-${new Date().toISOString().split('T')[0]}.pdf`);
   }
 
   function exportarSesionesAdminPDF() {
@@ -4374,7 +4469,7 @@
     const startY=pdfHeader(doc,'Historial de Sesiones',`Total: ${ss.length} sesiones`);
     const fmtDT=d=>d?new Date(d).toLocaleString('es-UY',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'Activa';
     doc.autoTable({startY,head:[['Usuario','Rol','Apertura','Bloqueo','Duración']],body:ss.map(s=>[s.usuarioNombre||'—',labelRol(s.usuarioRol),fmtDT(s.apertura),fmtDT(s.bloqueo),s.duracionMin!=null?s.duracionMin+' min':'—']),styles:{fontSize:8,cellPadding:2.5},headStyles:{fillColor:[42,109,181],textColor:255,fontStyle:'bold'},alternateRowStyles:{fillColor:[245,245,250]}});
-    doc.save(`sut-sesiones-historial-${new Date().toISOString().split('T')[0]}.pdf`);
+    pdfCopyright(doc); doc.save(`sut-sesiones-historial-${new Date().toISOString().split('T')[0]}.pdf`);
   }
 
   function exportarAuditoriaPDF() {
@@ -4396,7 +4491,7 @@
     } else {
       doc.autoTable({startY,head:[['Fecha/Hora','Usuario','Código','Motivo','Sug.','Final','Modificado']],body:filtrados.map(p=>[fmtDT(p.fecha),p.usuarioNombre||'—',p.id||'—',MOTIVOS_MAP[p.motivo]||p.motivo||'—',`N${p.nivelSugerido||'—'}`,`N${p.nivel||'—'}`,p.override?'Sí':'No']),styles:{fontSize:7.5,cellPadding:2},headStyles:{fillColor:[42,109,181],textColor:255,fontStyle:'bold'},alternateRowStyles:{fillColor:[245,245,250]}});
     }
-    doc.save(`sut-auditoria-${dv}_${hv}.pdf`);
+    pdfCopyright(doc); doc.save(`sut-auditoria-${dv}_${hv}.pdf`);
   }
 
   // ─── PDFs INDEPENDIENTES DESDE PANEL ADMIN ───────────────────
@@ -4420,7 +4515,7 @@
     }
     doc.setFontSize(7); doc.setTextColor(150);
     doc.text(`${ss.length} sesión${ss.length!==1?'es':''} | SIT Triage — Sistema Integrado de Triage | ${new Date().toLocaleString('es-UY')}`, 14, doc.internal.pageSize.height-8);
-    doc.save(`sut-sesiones-${new Date().toISOString().split('T')[0]}.pdf`);
+    pdfCopyright(doc); doc.save(`sut-sesiones-${new Date().toISOString().split('T')[0]}.pdf`);
   }
 
   function _generarAuditoriaAdminPDF(desde, hasta, label) {
@@ -4556,7 +4651,7 @@
     }
     doc.setFontSize(7); doc.setTextColor(150);
     doc.text(`SIT Triage — Sistema Integrado de Triage | Auditoría de Tiempos | ${new Date().toLocaleString('es-UY')}`, 14, doc.internal.pageSize.height-8);
-    doc.save(`sut-auditoria-tiempos-${new Date().toISOString().split('T')[0]}.pdf`);
+    pdfCopyright(doc); doc.save(`sut-auditoria-tiempos-${new Date().toISOString().split('T')[0]}.pdf`);
   }
 
   // ─── ANÁLISIS POR TURNOS ─────────────────────────────────────
@@ -4774,7 +4869,7 @@
     }
     const pgCount=doc.internal.getNumberOfPages();
     for(let i=1;i<=pgCount;i++){doc.setPage(i);addPdfFooter(doc);}
-    doc.save(`sut-turnos-${turnosDesde||'analisis'}.pdf`);
+    pdfCopyright(doc); doc.save(`sut-turnos-${turnosDesde||'analisis'}.pdf`);
   }
 
   // ─── BIBLIOGRAFÍA ────────────────────────────────────────────
@@ -4993,6 +5088,7 @@
     };
 
     function _checkTV(now) {
+      return; // Reemplazado por el motor de alertas mejorado (banner + alarma recurrente). Ver más abajo.
       const today = new Date().toDateString();
       const tiempos = getSutTiempos();
       let todos;
@@ -5041,6 +5137,145 @@
 
     setInterval(_tickTimers, 1000);
     setTimeout(() => _checkTV(Date.now()), 3000);
+  })();
+
+  // ─── MOTOR DE ALERTAS DE TIEMPO VENCIDO (mejorado) ───────────
+  // Banner rotativo grande + parpadeo de fila + contador de retraso + alarma
+  // recurrente (N1/N2 cada 30s, N3 cada 2min) con "Silenciar 5 min".
+  (function() {
+    let _silencedUntil = 0;
+    let _lastAlarm = 0;
+    let _banner = null;
+    let _actx = null;
+
+    function _esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+    function _appVisible(){ const s = document.getElementById('screen-app'); return !!(s && s.offsetParent !== null); }
+
+    function _bannerEl(){
+      if (_banner && document.body.contains(_banner)) return _banner;
+      _banner = document.createElement('div');
+      _banner.id = 'tv-banner';
+      _banner.setAttribute('role', 'alert');
+      _banner.setAttribute('aria-live', 'assertive');
+      (document.getElementById('screen-app') || document.body).appendChild(_banner);
+      return _banner;
+    }
+
+    function _getCtx(){
+      try {
+        if (!_actx) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; _actx = new AC(); }
+        if (_actx.state === 'suspended') _actx.resume();
+        return _actx;
+      } catch(e){ return null; }
+    }
+
+    // Alarma más intensa/urgente: sirena corta (N1/N2) o beep repetitivo (N3)
+    function _sonidoAlarma(nivel){
+      const ctx = _getCtx(); if (!ctx) return;
+      function beep(freq, dur, vol, delay, type){
+        try {
+          const o = ctx.createOscillator(), g = ctx.createGain();
+          o.connect(g); g.connect(ctx.destination);
+          o.type = type || 'square'; o.frequency.value = freq;
+          const t0 = ctx.currentTime + delay;
+          g.gain.setValueAtTime(0, t0);
+          g.gain.linearRampToValueAtTime(vol, t0 + 0.01);
+          g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+          o.start(t0); o.stop(t0 + dur + 0.05);
+        } catch(e){}
+      }
+      if (nivel <= 2) {
+        // sirena urgente sube-baja + acento
+        beep(760, 0.16, 0.7, 0.00, 'sawtooth');
+        beep(1040,0.16, 0.7, 0.18, 'sawtooth');
+        beep(760, 0.16, 0.7, 0.36, 'sawtooth');
+        beep(1040,0.20, 0.8, 0.54, 'sawtooth');
+        beep(1250,0.28, 0.85,0.78, 'square');
+      } else {
+        // beep repetitivo (N3)
+        beep(680, 0.20, 0.55, 0.00, 'square');
+        beep(900, 0.20, 0.55, 0.26, 'square');
+        beep(680, 0.24, 0.55, 0.52, 'square');
+      }
+    }
+
+    function _overdue(now){
+      let todos; try { todos = JSON.parse(localStorage.getItem('sut_pacientes') || '[]'); } catch { return []; }
+      const today = new Date().toDateString();
+      const t = getSutTiempos();
+      const out = [];
+      todos.forEach(p => {
+        if (p.asistidoEn || !p.fecha || !p.nivel) return;
+        if (new Date(p.fecha).toDateString() !== today) return;
+        const sec = Math.floor((now - new Date(p.fecha).getTime()) / 1000);
+        const maxSec = (t[p.nivel] || 0) * 60;
+        const venc = maxSec === 0 ? sec > 0 : sec >= maxSec;
+        if (venc) out.push({ id: p.id, nivel: p.nivel, sec: sec, maxSec: maxSec });
+      });
+      out.sort((a, b) => a.nivel - b.nivel || b.sec - a.sec);
+      return out;
+    }
+
+    // Parpadeo de fila + contador de retraso sobre la tabla de pacientes
+    function _updateRows(now){
+      const t = getSutTiempos();
+      document.querySelectorAll('.pac-timer[data-fecha]').forEach(el => {
+        const fecha = el.dataset.fecha, nivel = parseInt(el.dataset.nivel) || 0;
+        if (!fecha || !nivel) return;
+        const sec = Math.floor((now - new Date(fecha).getTime()) / 1000);
+        const maxSec = (t[nivel] || 0) * 60;
+        const venc = maxSec === 0 ? sec > 0 : sec >= maxSec;
+        const tr = el.closest('tr'); if (tr) tr.classList.toggle('pac-row-vencida', venc);
+        const td = el.parentElement; if (!td) return;
+        let ret = td.querySelector('.pac-retraso');
+        if (venc) {
+          const over = Math.max(0, Math.floor(sec / 60) - Math.floor(maxSec / 60));
+          if (!ret) { ret = document.createElement('span'); ret.className = 'pac-retraso'; td.appendChild(ret); }
+          ret.textContent = '⏰ +' + over + ' min de retraso';
+          ret.style.display = '';
+        } else if (ret) { ret.style.display = 'none'; }
+      });
+    }
+
+    function _renderBanner(list){
+      const b = _bannerEl();
+      if (!list.length || !_appVisible()) { b.classList.remove('on'); return; }
+      const idx = Math.floor(Date.now() / 4000) % list.length;   // rota cada 4s
+      const p = list[idx];
+      const min = Math.floor(p.sec / 60);
+      const cod = (p.id && p.id !== '—') ? p.id : 'Sin código';
+      const silenced = Date.now() < _silencedUntil;
+      const restante = silenced ? Math.ceil((_silencedUntil - Date.now()) / 60000) : 0;
+      b.classList.toggle('silenciado', silenced);
+      b.innerHTML =
+        '<span class="tv-ico">⚠️</span>' +
+        '<span class="tv-txt">PACIENTE SIN ATENDER — <b>' + _esc(cod) + '</b> — Nivel ' + p.nivel + ' — ' + min + ' minutos de espera</span>' +
+        (list.length > 1 ? '<span class="tv-count">' + (idx + 1) + '/' + list.length + ' vencidos</span>' : '') +
+        '<button class="tv-silencio" onclick="window._tvSilenciar()">' + (silenced ? ('🔕 Silenciado ' + restante + ' min') : '🔕 Silenciar 5 min') + '</button>';
+      b.classList.add('on');
+    }
+
+    function _audio(list, now){
+      if (!list.length) { _lastAlarm = 0; return; }
+      if (now < _silencedUntil) return;
+      const minNivel = Math.min.apply(null, list.map(x => x.nivel));
+      let cadence;
+      if (minNivel <= 2) cadence = 30000;        // N1/N2: cada 30s
+      else if (minNivel === 3) cadence = 120000; // N3: cada 2min
+      else return;                                // N4/N5: sin alarma sonora
+      if (now - _lastAlarm >= cadence) { _sonidoAlarma(minNivel); _lastAlarm = now; }
+    }
+
+    window._tvSilenciar = function(){ _silencedUntil = Date.now() + 5 * 60 * 1000; };
+
+    setInterval(function(){
+      const now = Date.now();
+      const list = _overdue(now);
+      _updateRows(now);
+      _renderBanner(list);
+      _audio(list, now);
+    }, 1000);
   })();
 
   // ─── MÓDULO AMBULANCIAS ──────────────────────────────────────
@@ -5330,7 +5565,8 @@
   </div>
 </div>
 <!-- MODAL FORMA DE LLEGADA — AMBULANCIA -->
-<footer style="text-align:center;padding:16px 12px;font-size:0.72rem;color:var(--text-muted);line-height:1.5">© 2026 Dr. M. D. S. y col. · SIT Triage — Sistema Integrado de Triage · Todos los derechos reservados · Uso clínico exclusivo</footer>
+<footer style="text-align:center;padding:16px 12px;font-size:0.72rem;color:var(--text-muted);line-height:1.5">© 2026 Dr. M. D. S. y col. · SIT Triage · Todos los derechos reservados · Uso clínico exclusivo</footer>
+<div style="position:fixed;bottom:10px;right:14px;font-size:11px;color:#9aa0aa;opacity:0.6;z-index:200;pointer-events:none;font-family:var(--font-display,inherit)">EasyMed</div>
 
 <!-- ═══════════════ SAOTE — Sistema de Apoyo al Operador Telefónico de Emergencias ═══════════════ -->
 <script>
